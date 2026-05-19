@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIIC Admin — Data Entry</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:       #0f172a;
+    --surface:  #1e293b;
+    --border:   #334155;
+    --accent:   #3b82f6;
+    --text:     #e2e8f0;
+    --muted:    #94a3b8;
+    --success:  #10b981;
+    --warning:  #f59e0b;
+    --danger:   #ef4444;
+    --radius:   10px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* ── Layout ── */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; gap: 14px; }
+  header h1 { font-size: 16px; font-weight: 700; }
+  header span { color: var(--muted); font-size: 13px; }
+  a.back { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; }
+  a.back:hover { text-decoration: underline; }
+
+  main { max-width: 860px; margin: 32px auto; padding: 0 20px 60px; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 20px; }
+  .card h2 { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+
+  /* ── Form ── */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 5px; letter-spacing: .03em; }
+  input, select, textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 11px; color: var(--text); font-size: 13px;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 72px; }
+  select option { background: var(--surface); }
+
+  .range-wrap { display: flex; align-items: center; gap: 10px; }
+  .range-wrap input[type=range] { flex: 1; accent-color: var(--accent); background: transparent; border: none; padding: 4px 0; }
+  .range-wrap span { width: 36px; text-align: right; font-weight: 700; color: var(--accent); font-size: 13px; }
+
+  /* ── Buttons ── */
+  .btn { padding: 8px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger  { background: var(--danger);  color: #fff; }
+  .btn-warning { background: var(--warning); color: #000; }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 28px; right: 28px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast-msg { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: 8px; padding: 11px 16px; font-size: 13px; box-shadow: 0 4px 16px #0006; animation: slideIn .25s ease; }
+  .toast-msg.err  { border-left-color: var(--danger); }
+  .toast-msg.warn { border-left-color: var(--warning); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ── Alert list ── */
+  .alert-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-icon { font-size: 20px; flex-shrink: 0; }
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .alert-desc  { font-size: 12px; color: var(--muted); }
+  .alert-meta  { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .badge-overdue  { background: #7f1d1d33; color: #fca5a5; }
+  .badge-deadline { background: #78350f33; color: #fcd34d; }
+  .badge-info     { background: #1e3a5f33; color: #93c5fd; }
+
+  /* ── KPI Grid ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .kpi-item label { font-size: 11px; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+
+  /* ── Activities table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+  td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .status-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .status-on-track { background: #052e1633; color: #6ee7b7; }
+  .status-caution  { background: #451a0333; color: #fcd34d; }
+  .status-behind   { background: #450a0a33; color: #fca5a5; }
+
+  @media(max-width:600px) { .grid, .grid.three { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:22px">⚙️</span>
+  <div>
+    <h1>MIIC Admin — Data Entry</h1>
+    <span>Update program metrics, alerts, and activities</span>
+  </div>
+  <a class="back" href="index.html">← Back to Dashboard</a>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('programs')">Program Metrics</button>
+    <button class="tab" onclick="switchTab('alerts')">Alerts</button>
+    <button class="tab" onclick="switchTab('activities')">Activities</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ PROGRAMS ═══ -->
+  <div id="panel-programs" class="panel active">
+
+    <div class="card">
+      <h2>📊 Select Program</h2>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="prog-select" onchange="loadProgram()" style="max-width:320px">
+          <option value="">Loading programs…</option>
+        </select>
+        <span id="prog-status-badge" style="font-size:12px"></span>
+      </div>
+    </div>
+
+    <div id="prog-form" style="display:none">
+      <div class="card">
+        <h2>📈 Metrics</h2>
+        <div class="grid three">
+          <div>
+            <label>STATUS</label>
+            <select id="f-status">
+              <option value="on-track">✅ On Track</option>
+              <option value="caution">⚠️ Caution</option>
+              <option value="behind">🔴 Behind</option>
+            </select>
+          </div>
+          <div>
+            <label>BUDGET USED (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="f-budget" min="0" max="100" oninput="$('f-budget-val').textContent=this.value+'%'">
+              <span id="f-budget-val">0%</span>
+            </div>
+          </div>
+          <div>
+            <label>COMPLETION (%)</label>
+            <div class="range-wrap">
+              <input type="range" id="f-completion" min="0" max="100" oninput="$('f-completion-val').textContent=this.value+'%'">
+              <span id="f-completion-val">0%</span>
+            </div>
+          </div>
+          <div>
+            <label>TODAY'S ACTIVITIES</label>
+            <input type="number" id="f-today" min="0" max="9999">
+          </div>
+          <div>
+            <label>TOTAL ACTIVITIES</label>
+            <input type="number" id="f-total" min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎯 KPIs</h2>
+        <div id="kpi-grid" class="kpi-grid"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-primary" onclick="saveProgram()">💾 Save Changes</button>
+        <button class="btn btn-warning" onclick="resetToday()">🔄 Reset Today's Count to 0</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════ ALERTS ═════ -->
+  <div id="panel-alerts" class="panel">
+
+    <div class="card">
+      <h2>➕ Create New Alert</h2>
+      <div class="grid">
+        <div>
+          <label>TYPE</label>
+          <select id="a-type">
+            <option value="overdue">🔴 Overdue</option>
+            <option value="deadline">⚠️ Deadline</option>
+            <option value="info">ℹ️ Info</option>
+          </select>
+        </div>
+        <div>
+          <label>LINKED PROGRAM (optional)</label>
+          <select id="a-prog">
+            <option value="">— None —</option>
+          </select>
+        </div>
+        <div class="full">
+          <label>TITLE</label>
+          <input type="text" id="a-title" placeholder="e.g. Gate Review overdue for cohort 3">
+        </div>
+        <div class="full">
+          <label>DESCRIPTION</label>
+          <textarea id="a-desc" placeholder="Additional context…"></textarea>
+        </div>
+        <div>
+          <label>TAG (short label)</label>
+          <input type="text" id="a-tag" placeholder="e.g. GIP • Gate Review" maxlength="60">
+        </div>
+        <div>
+          <label>TIME LABEL</label>
+          <input type="text" id="a-time" value="Just now" maxlength="40">
+        </div>
+        <div>
+          <label>ICON (emoji)</label>
+          <input type="text" id="a-icon" value="🔔" maxlength="4" style="max-width:80px">
+        </div>
+      </div>
+      <button class="btn btn-success" style="margin-top:14px" onclick="createAlert()">Create Alert</button>
+    </div>
+
+    <div class="card">
+      <h2>🔔 Active Alerts <span id="alert-count" style="font-weight:400;color:var(--muted);font-size:12px"></span></h2>
+      <div id="alert-list"><div class="empty">Loading…</div></div>
+      <div style="margin-top:14px">
+        <button class="btn btn-danger btn-sm" onclick="acknowledgeAll()">Acknowledge All</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════ ACTIVITIES ══ -->
+  <div id="panel-activities" class="panel">
+
+    <div class="card">
+      <h2>📋 Log New Activity</h2>
+      <div class="grid">
+        <div>
+          <label>PROGRAM</label>
+          <select id="act-prog"></select>
+        </div>
+        <div>
+          <label>ACTIVITY TYPE</label>
+          <select id="act-type">
+            <option>Workshops</option><option>Coaching</option><option>Gate Reviews</option>
+            <option>Testing</option><option>Advisory</option><option>Demo Days</option>
+            <option>Investor Eng.</option><option>Pilots</option>
+          </select>
+        </div>
+        <div class="full">
+          <label>ACTIVITY NAME</label>
+          <input type="text" id="act-name" placeholder="e.g. Cohort 3 Prototype Review">
+        </div>
+        <div>
+          <label>DATE</label>
+          <input type="date" id="act-date">
+        </div>
+        <div>
+          <label>STATUS</label>
+          <select id="act-status">
+            <option value="on-track">✅ On Track</option>
+            <option value="caution">⚠️ Caution</option>
+            <option value="behind">🔴 Behind</option>
+          </select>
+        </div>
+        <div>
+          <label>RESPONSIBLE PERSON</label>
+          <input type="text" id="act-person" placeholder="Name">
+        </div>
+        <div class="full">
+          <label>NOTES</label>
+          <textarea id="act-notes" placeholder="Optional notes…"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px" onclick="logActivity()">Log Activity</button>
+    </div>
+
+    <div class="card">
+      <h2>📄 Recent Activities <span id="act-filter-label" style="font-weight:400;color:var(--muted);font-size:12px"></span></h2>
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+        <select id="act-filter-prog" onchange="loadActivities()" style="max-width:220px">
+          <option value="">All Programs</option>
+        </select>
+        <button class="btn btn-sm" style="background:var(--border);color:var(--text)" onclick="loadActivities()">Refresh</button>
+      </div>
+      <div id="act-table"><div class="empty">Loading…</div></div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const API = 'api';
+const $ = id => document.getElementById(id);
+let programs = [];
+let kpiKeys  = {};   // progId → array of kpi key names
+
+// ── Tab switching ─────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab,.panel').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+  $(`panel-${name}`).classList.add('active');
+}
+
+// ── Toast notifications ───────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = 'toast-msg' + (type === 'err' ? ' err' : type === 'warn' ? ' warn' : '');
+  el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── Load programs on boot ─────────────────────────────────────
+async function boot() {
+  try {
+    const res = await fetch(`${API}/programs.php`);
+    programs  = await res.json();
+  } catch (_) {
+    toast('Cannot reach API — is XAMPP running?', 'err');
+    return;
+  }
+
+  // Populate all program selects
+  const opts = programs.map(p =>
+    `<option value="${p.id}">${p.icon} ${p.abbr} — ${p.name}</option>`
+  ).join('');
+
+  $('prog-select').innerHTML = '<option value="">— Choose a program —</option>' + opts;
+
+  const optsFull = programs.map(p =>
+    `<option value="${p.id}">${p.abbr}</option>`
+  ).join('');
+  $('a-prog').innerHTML += optsFull;
+  $('act-prog').innerHTML = optsFull;
+  $('act-filter-prog').innerHTML = '<option value="">All Programs</option>' + optsFull;
+
+  // Default date for activity log
+  $('act-date').value = new Date().toISOString().slice(0, 10);
+
+  loadAlerts();
+  loadActivities();
+}
+
+// ── Program metrics ───────────────────────────────────────────
+function loadProgram() {
+  const id   = $('prog-select').value;
+  const prog = programs.find(p => p.id === id);
+  if (!prog) { $('prog-form').style.display = 'none'; return; }
+
+  $('prog-form').style.display = 'block';
+
+  // Status
+  $('f-status').value = prog.status;
+
+  // Budget
+  const b = prog.budget_used ?? 0;
+  $('f-budget').value = b;
+  $('f-budget-val').textContent = b + '%';
+
+  // Metrics
+  $('f-today').value      = prog.metrics?.today      ?? 0;
+  $('f-total').value      = prog.metrics?.total      ?? 0;
+  const c = prog.metrics?.completion ?? 0;
+  $('f-completion').value = c;
+  $('f-completion-val').textContent = c + '%';
+
+  // KPIs
+  const kpis = prog.kpis ?? {};
+  kpiKeys[id] = Object.keys(kpis);
+  const grid  = $('kpi-grid');
+  grid.innerHTML = kpiKeys[id].length === 0
+    ? '<div style="color:var(--muted);font-size:13px">No KPIs recorded for this program.</div>'
+    : kpiKeys[id].map(k => `
+        <div class="kpi-item">
+          <label>${k.replace(/_/g,' ').toUpperCase()}</label>
+          <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}">
+        </div>`
+      ).join('');
+
+  // Status badge
+  const colors = { 'on-track': '#6ee7b7', caution: '#fcd34d', behind: '#fca5a5' };
+  $('prog-status-badge').innerHTML =
+    `<span style="color:${colors[prog.status]};font-weight:700">${prog.status.toUpperCase()}</span>`;
+}
+
+async function saveProgram() {
+  const id   = $('prog-select').value;
+  if (!id) { toast('Select a program first', 'warn'); return; }
+
+  const kpis = {};
+  (kpiKeys[id] ?? []).forEach(k => {
+    kpis[k] = $(`kpi-${k}`)?.value ?? '';
+  });
+
+  const payload = {
+    id,
+    status:         $('f-status').value,
+    budget_used:    parseInt($('f-budget').value),
+    today_count:    parseInt($('f-today').value),
+    total_count:    parseInt($('f-total').value),
+    completion_pct: parseInt($('f-completion').value),
+    kpis,
+  };
+
+  try {
+    const res  = await fetch(`${API}/programs.php`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`✅ ${id} updated successfully`);
+      // Refresh local copy
+      const prog = programs.find(p => p.id === id);
+      if (prog) {
+        prog.status         = payload.status;
+        prog.budget_used    = payload.budget_used;
+        prog.metrics.today  = payload.today_count;
+        prog.metrics.total  = payload.total_count;
+        prog.metrics.completion = payload.completion_pct;
+        prog.kpis           = kpis;
+      }
+    } else {
+      toast(data.error ?? 'Save failed', 'err');
+    }
+  } catch (_) {
+    toast('Network error', 'err');
+  }
+}
+
+async function resetToday() {
+  const id = $('prog-select').value;
+  if (!id) { toast('Select a program first', 'warn'); return; }
+  $('f-today').value = 0;
+  await saveProgram();
+}
+
+// ── Alerts ───────────────────────────────────────────────────
+async function loadAlerts() {
+  try {
+    const res    = await fetch(`${API}/alerts.php`);
+    const alerts = await res.json();
+    $('alert-count').textContent = `(${alerts.length} active)`;
+    renderAlertList(alerts);
+  } catch (_) {
+    $('alert-list').innerHTML = '<div class="empty">Failed to load alerts.</div>';
+  }
+}
+
+function renderAlertList(alerts) {
+  if (!alerts.length) {
+    $('alert-list').innerHTML = '<div class="empty">No active alerts.</div>';
+    return;
+  }
+  $('alert-list').innerHTML = alerts.map(a => `
+    <div class="alert-row" id="alert-row-${a.id}">
+      <div class="alert-icon">${a.icon ?? '🔔'}</div>
+      <div class="alert-body">
+        <div class="alert-title">${esc(a.title)}</div>
+        <div class="alert-desc">${esc(a.description ?? '')}</div>
+        <div class="alert-meta">
+          <span class="badge badge-${a.type}">${a.type}</span>
+          ${a.tag ? `&nbsp;·&nbsp;${esc(a.tag)}` : ''}
+          &nbsp;·&nbsp;${esc(a.time ?? '')}
+          ${a.program_id ? `&nbsp;·&nbsp;<strong>${esc(a.program_id)}</strong>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="ackOne(${a.id})">Dismiss</button>
+    </div>`
+  ).join('');
+}
+
+async function createAlert() {
+  const title = $('a-title').value.trim();
+  if (!title) { toast('Title is required', 'warn'); return; }
+
+  const payload = {
+    action:      'create',
+    type:        $('a-type').value,
+    program_id:  $('a-prog').value || null,
+    title,
+    description: $('a-desc').value.trim(),
+    tag:         $('a-tag').value.trim(),
+    time_label:  $('a-time').value.trim() || 'Just now',
+    icon:        $('a-icon').value.trim() || '🔔',
+  };
+
+  try {
+    const res  = await fetch(`${API}/alerts.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('✅ Alert created');
+      $('a-title').value = '';
+      $('a-desc').value  = '';
+      $('a-tag').value   = '';
+      loadAlerts();
+    } else {
+      toast(data.error ?? 'Create failed', 'err');
+    }
+  } catch (_) {
+    toast('Network error', 'err');
+  }
+}
+
+async function ackOne(id) {
+  try {
+    await fetch(`${API}/alerts.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'acknowledge', id }),
+    });
+    const row = $(`alert-row-${id}`);
+    if (row) row.remove();
+    toast('Alert dismissed');
+    const cnt = $('alert-count');
+    const n   = parseInt(cnt.textContent.match(/\d+/)?.[0] ?? '1') - 1;
+    cnt.textContent = `(${Math.max(0, n)} active)`;
+  } catch (_) { toast('Network error', 'err'); }
+}
+
+async function acknowledgeAll() {
+  try {
+    await fetch(`${API}/alerts.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'acknowledge_all' }),
+    });
+    toast('All alerts dismissed');
+    loadAlerts();
+  } catch (_) { toast('Network error', 'err'); }
+}
+
+// ── Activities ───────────────────────────────────────────────
+async function loadActivities() {
+  const progId = $('act-filter-prog').value;
+  const url    = progId ? `${API}/activities.php?program_id=${progId}` : `${API}/activities.php`;
+  $('act-filter-label').textContent = progId ? `— ${progId}` : '— All Programs';
+  try {
+    const res  = await fetch(url);
+    const acts = await res.json();
+    renderActivities(acts);
+  } catch (_) {
+    $('act-table').innerHTML = '<div class="empty">Failed to load activities.</div>';
+  }
+}
+
+function renderActivities(acts) {
+  if (!acts.length) {
+    $('act-table').innerHTML = '<div class="empty">No activities found.</div>';
+    return;
+  }
+  $('act-table').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>PROGRAM</th><th>NAME</th><th>TYPE</th>
+        <th>DATE</th><th>STATUS</th><th>PERSON</th>
+      </tr></thead>
+      <tbody>
+        ${acts.map(a => `<tr>
+          <td><strong>${esc(a.progId)}</strong></td>
+          <td>${esc(a.name)}</td>
+          <td>${esc(a.type)}</td>
+          <td>${esc(a.date ?? '')}</td>
+          <td><span class="status-pill status-${a.status}">${esc(a.status)}</span></td>
+          <td>${esc(a.person ?? '—')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function logActivity() {
+  const name = $('act-name').value.trim();
+  if (!name) { toast('Activity name is required', 'warn'); return; }
+
+  const payload = {
+    program_id: $('act-prog').value,
+    name,
+    type:   $('act-type').value,
+    date:   $('act-date').value,
+    status: $('act-status').value,
+    person: $('act-person').value.trim() || 'Unassigned',
+    notes:  $('act-notes').value.trim(),
+  };
+
+  try {
+    const res  = await fetch(`${API}/activities.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`✅ Activity logged (ID ${data.id})`);
+      $('act-name').value   = '';
+      $('act-person').value = '';
+      $('act-notes').value  = '';
+      loadActivities();
+      // Refresh local program metrics so today/total counts are fresh
+      try {
+        const pr = await fetch(`${API}/programs.php`);
+        programs = await pr.json();
+        const id = $('prog-select').value;
+        if (id) loadProgram();
+      } catch (_) {}
+    } else {
+      toast(data.error ?? 'Log failed', 'err');
+    }
+  } catch (_) {
+    toast('Network error', 'err');
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MIIC Program Activity Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  /* ═══════════════════════════════════════════════
+     DESIGN TOKENS
+  ═══════════════════════════════════════════════ */
+  :root {
+    --bg-base:      #0f1117;
+    --bg-surface:   #1a1d27;
+    --bg-card:      #20243a;
+    --bg-hover:     #262a40;
+    --border:       #2d3250;
+    --text-primary: #e8eaf0;
+    --text-muted:   #7c829c;
+    --text-accent:  #a0a8c8;
+
+    --green:   #22c55e;
+    --yellow:  #f59e0b;
+    --red:     #ef4444;
+    --blue:    #3b82f6;
+
+    /* Program palette */
+    --gip:   #3b82f6;
+    --tes:   #10b981;
+    --vbp:   #8b5cf6;
+    --pctp:  #f59e0b;
+    --sap:   #14b8a6;
+    --irp:   #ef4444;
+    --gmp:   #6366f1;
+    --idia:  #ec4899;
+
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --nav-h:  60px;
+    --sidebar-w: 240px;
+    --rsidebar-w: 220px;
+    --transition: 0.2s ease;
+  }
+
+  /* ═══════════════════════════════════════════════
+     RESET & BASE
+  ═══════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+  input, select { font: inherit; color: inherit; }
+
+  /* ═══════════════════════════════════════════════
+     TOP NAV
+  ═══════════════════════════════════════════════ */
+  .topnav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--nav-h);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 20px; gap: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  }
+  .topnav-brand { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+  .brand-logo {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: #fff;
+    flex-shrink: 0;
+  }
+  .brand-title { font-size: 15px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+  .brand-sub   { font-size: 11px; color: var(--text-muted); }
+
+  .search-wrap {
+    flex: 1; max-width: 480px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%; padding: 8px 12px 8px 36px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); font-size: 13px; outline: none;
+    transition: border-color var(--transition);
+  }
+  .search-wrap input:focus { border-color: var(--blue); }
+  .search-wrap .icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 14px; pointer-events: none;
+  }
+  .search-results {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow); z-index: 200; display: none;
+    max-height: 240px; overflow-y: auto;
+  }
+  .search-results.open { display: block; }
+  .search-item {
+    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: background var(--transition);
+  }
+  .search-item:hover { background: var(--bg-hover); }
+
+  .topnav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .nav-icon-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: background var(--transition);
+    position: relative;
+  }
+  .nav-icon-btn:hover { background: var(--bg-hover); }
+  .badge {
+    position: absolute; top: -5px; right: -5px;
+    min-width: 17px; height: 17px; border-radius: 9px;
+    background: var(--red); color: #fff; font-size: 9px; font-weight: 800;
+    display: none; align-items: center; justify-content: center;
+    padding: 0 4px; line-height: 1;
+  }
+  .badge.visible { display: flex; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff;
+    cursor: pointer;
+  }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3);
+    font-size: 11px; font-weight: 600; color: var(--green);
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
+
+  /* ═══════════════════════════════════════════════
+     LAYOUT SHELL
+  ═══════════════════════════════════════════════ */
+  .shell {
+    display: flex;
+    margin-top: var(--nav-h);
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  /* ═══════════════════════════════════════════════
+     LEFT SIDEBAR
+  ═══════════════════════════════════════════════ */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 20px;
+    position: sticky; top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+  }
+
+  .sidebar-section-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--text-muted); text-transform: uppercase; padding: 0 4px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .program-list { display: flex; flex-direction: column; gap: 2px; }
+  .prog-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    transition: background var(--transition);
+    border: 1px solid transparent;
+  }
+  .prog-item:hover   { background: var(--bg-hover); }
+  .prog-item.active  { background: var(--bg-card); border-color: var(--border); }
+  .prog-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .prog-info { flex: 1; min-width: 0; }
+  .prog-name  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prog-stage { font-size: 10px; color: var(--text-muted); }
+  .prog-count {
+    font-size: 11px; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px; background: var(--bg-hover);
+    color: var(--text-accent);
+  }
+
+  .filter-group { display: flex; flex-direction: column; gap: 8px; }
+  .filter-label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+  .filter-input, .filter-select {
+    width: 100%; padding: 7px 10px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); font-size: 12px; outline: none;
+    transition: border-color var(--transition);
+  }
+  .filter-input:focus, .filter-select:focus { border-color: var(--blue); }
+  .filter-select option { background: var(--bg-surface); }
+  .date-range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .quick-links { display: flex; flex-direction: column; gap: 4px; }
+  .quick-link {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 12px;
+    color: var(--text-muted); transition: all var(--transition);
+  }
+  .quick-link:hover { background: var(--bg-card); color: var(--text-primary); }
+  .quick-link .ql-icon { font-size: 14px; width: 18px; text-align: center; }
+
+  /* ═══════════════════════════════════════════════
+     MAIN CONTENT
+  ═══════════════════════════════════════════════ */
+  .main {
+    flex: 1;
+    padding: 24px 20px;
+    min-width: 0;
+    display: flex; flex-direction: column; gap: 28px;
+    overflow-x: hidden;
+  }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: var(--text-primary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .icon { font-size: 18px; }
+  .section-badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 20px; background: var(--bg-card); color: var(--text-muted);
+  }
+  .section-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all var(--transition);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-ghost {
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .btn-primary {
+    background: var(--blue); border: 1px solid transparent; color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+
+  /* ═══ SECTION 1: PROGRAM CARDS ═══ */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .prog-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  .prog-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .prog-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: #3d4260; }
+  .prog-card.selected { border-color: #3b82f680; box-shadow: 0 0 0 1px #3b82f640; }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .card-prog-id {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-icon-wrap {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .card-prog-name  { font-size: 14px; font-weight: 700; }
+  .card-prog-stage { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; flex-shrink: 0;
+  }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .status-green  { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .status-yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .status-red    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+  .status-dot-green  { background: #22c55e; }
+  .status-dot-yellow { background: #f59e0b; }
+  .status-dot-red    { background: #ef4444; }
+
+  .card-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .metric-item { text-align: center; }
+  .metric-val  { font-size: 20px; font-weight: 800; }
+  .metric-lbl  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+  .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .progress-lbl  { font-size: 11px; color: var(--text-muted); }
+  .progress-pct  { font-size: 11px; font-weight: 700; }
+  .progress-bar-wrap { height: 6px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+  /* ═══ SECTION 2: TIMELINE ═══ */
+  .timeline-wrap {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .timeline-controls {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .zoom-btn {
+    padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted);
+    transition: all var(--transition);
+  }
+  .zoom-btn.active, .zoom-btn:hover {
+    background: var(--blue); color: #fff; border-color: var(--blue);
+  }
+  .timeline-legend {
+    display: flex; gap: 12px; margin-left: auto; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .chart-container { position: relative; height: 280px; }
+
+  /* ═══ SECTION 3: ANALYTICS ═══ */
+  .tabs { display: flex; gap: 2px; margin-bottom: 0; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 14px; border-radius: 8px 8px 0 0; font-size: 12px; font-weight: 600;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-bottom: none; color: var(--text-muted); cursor: pointer;
+    transition: all var(--transition); display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn.active { background: var(--bg-surface); color: var(--text-primary); border-bottom-color: var(--bg-surface); }
+  .tab-btn .tab-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  .tab-panel {
+    display: none;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) var(--radius);
+    padding: 20px;
+  }
+  .tab-panel.active { display: block; }
+
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .chart-card {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .chart-card-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Drill-down table */
+  .table-wrap { margin-top: 20px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .table-toolbar {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+    background: var(--bg-surface); border-bottom: 1px solid var(--border);
+  }
+  .table-search {
+    flex: 1; max-width: 260px; padding: 6px 10px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-primary); font-size: 12px; outline: none;
+  }
+  .table-search:focus { border-color: var(--blue); }
+  .records-count { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--bg-surface); }
+  th {
+    padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  th:hover { color: var(--text-primary); }
+  th .sort-icon { font-size: 10px; margin-left: 4px; opacity: 0.5; }
+  td {
+    padding: 10px 14px; font-size: 12px; border-top: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .table-status { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* ═══ SECTION 4: ALERTS ═══ */
+  .alerts-grid { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px; border-radius: 10px; border: 1px solid;
+    transition: all var(--transition);
+  }
+  .alert-overdue  { background: rgba(239,68,68,0.08);   border-color: rgba(239,68,68,0.25);   }
+  .alert-deadline { background: rgba(245,158,11,0.08);  border-color: rgba(245,158,11,0.25);  }
+  .alert-info     { background: rgba(59,130,246,0.08);  border-color: rgba(59,130,246,0.25);  }
+  .alert-icon-wrap {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+  }
+  .alert-body { flex: 1; min-width: 0; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .alert-desc  { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+  .alert-meta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .alert-tag   {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    background: var(--bg-hover); color: var(--text-muted);
+  }
+  .alert-time  { font-size: 10px; color: var(--text-muted); }
+  .alert-actions { display: flex; gap: 6px; align-items: flex-start; }
+  .alert-btn {
+    padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted);
+    transition: all var(--transition);
+  }
+  .alert-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  /* ═══════════════════════════════════════════════
+     RIGHT SIDEBAR
+  ═══════════════════════════════════════════════ */
+  .rsidebar {
+    width: var(--rsidebar-w);
+    min-width: var(--rsidebar-w);
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border);
+    padding: 16px 14px;
+    display: flex; flex-direction: column; gap: 20px;
+    position: sticky; top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+  }
+  .rside-section-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    color: var(--text-muted); text-transform: uppercase; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .quick-stats { display: flex; flex-direction: column; gap: 10px; }
+  .qstat {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 8px; background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+  .qstat-label { font-size: 10px; color: var(--text-muted); }
+  .qstat-value { font-size: 20px; font-weight: 800; margin-top: 1px; }
+  .qstat-delta { font-size: 10px; margin-top: 1px; }
+  .delta-up   { color: var(--green); }
+  .delta-down { color: var(--red); }
+  .qstat-icon { font-size: 22px; opacity: 0.6; }
+
+  .completion-bars { display: flex; flex-direction: column; gap: 12px; }
+  .cbar-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .cbar-name { font-size: 11px; font-weight: 600; color: var(--text-accent); }
+  .cbar-pct  { font-size: 11px; font-weight: 700; }
+  .cbar-track { height: 5px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
+  .cbar-fill  { height: 100%; border-radius: 3px; }
+
+  .export-section { display: flex; flex-direction: column; gap: 8px; }
+  .export-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
+    cursor: pointer; transition: all var(--transition);
+  }
+  .export-btn:hover { background: var(--bg-hover); }
+  .export-btn .exp-icon { font-size: 14px; }
+
+  .top-prog-list { display: flex; flex-direction: column; gap: 8px; }
+  .top-prog-item { display: flex; align-items: center; gap: 8px; }
+  .tp-rank { font-size: 10px; color: var(--text-muted); width: 16px; text-align: right; }
+  .tp-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .tp-body { flex: 1; min-width: 0; }
+  .tp-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tp-val  { font-size: 10px; color: var(--text-muted); }
+  .tp-bar-wrap { width: 50px; }
+  .tp-bar { height: 4px; border-radius: 2px; }
+
+  /* ═══════════════════════════════════════════════
+     MODAL
+  ═══════════════════════════════════════════════ */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 300; display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 16px; width: 100%; max-width: 640px;
+    max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg-surface); z-index: 1;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close {
+    width: 30px; height: 30px; border-radius: 6px; background: var(--bg-card);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text-muted); cursor: pointer;
+    transition: all var(--transition);
+  }
+  .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .modal-body { padding: 24px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .modal-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .modal-stat-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
+  .modal-stat-sub   { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .modal-kpi-list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .modal-kpi-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .modal-kpi-label { color: var(--text-muted); }
+  .modal-kpi-value { font-weight: 700; }
+
+  /* ═══════════════════════════════════════════════
+     SCROLLBAR
+  ═══════════════════════════════════════════════ */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #3d4260; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #5a607c; }
+
+  /* ═══════════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════════ */
+  @media (max-width: 1200px) {
+    .rsidebar { display: none; }
+    .analytics-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .analytics-grid { grid-template-columns: 1fr; }
+    .cards-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .modal-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .topnav-brand { min-width: auto; }
+    .brand-title { font-size: 13px; }
+    .brand-sub { display: none; }
+  }
+
+  /* ═══════════════════════════════════════════════
+     UTILITY
+  ═══════════════════════════════════════════════ */
+  .hidden { display: none !important; }
+  .fadeIn { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .section-divider { height: 1px; background: var(--border); }
+
+  /* ═══════════════════════════════════════════════
+     PRINT / PDF EXPORT
+  ═══════════════════════════════════════════════ */
+  @media print {
+    @page { size: A4 portrait; margin: 18mm 14mm; }
+
+    /* Hide chrome, sidebars, interactive elements */
+    .topnav, .sidebar, .rsidebar, .modal-overlay,
+    .zoom-btns, .table-toolbar, .tab-btn, .btn,
+    .alert-btn, .section-actions, .pipeline-strip,
+    .quick-links, .export-section, .nav-icon-btn,
+    .avatar, .role-select, .search-wrap,
+    #section-alerts { display: none !important; }
+
+    /* Flatten layout */
+    body, html { background: #fff !important; color: #111 !important; font-size: 10pt; }
+    .shell { display: block !important; }
+    .main { padding: 0 !important; margin: 0 !important; width: 100% !important; min-width: 0 !important; }
+
+    /* Cards */
+    .cards-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+    .prog-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; break-inside: avoid; }
+    .card-metric-value { color: #111 !important; }
+    .card-metric-label, .card-stage, .section-title { color: #444 !important; }
+    .status-pill { border: 1px solid #ccc !important; }
+
+    /* Charts — give them defined print heights */
+    .analytics-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+    .chart-card { border: 1px solid #ccc !important; background: #f9f9f9 !important; break-inside: avoid; }
+    .chart-card canvas { max-height: 160px !important; }
+
+    /* Timeline */
+    #section-timeline { break-before: page; }
+    #timelineChart { max-height: 200px !important; }
+
+    /* Section headers */
+    .section-header { border-bottom: 1px solid #ddd !important; margin-bottom: 8px; }
+
+    /* Print header — inserted by JS before printing */
+    .print-header { display: block !important; text-align: center; margin-bottom: 16px; }
+    .print-header h1 { font-size: 16pt; color: #111; }
+    .print-header p  { font-size: 9pt; color: #555; }
+  }
+  .print-header { display: none; }
+
+  /* Role badge in nav */
+  .role-select {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-accent);
+    outline: none; cursor: pointer;
+  }
+  .role-select option { background: var(--bg-surface); }
+
+  /* Tooltip placeholder */
+  .tip { position: relative; cursor: help; }
+  .tip::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+    background: #1e2234; border: 1px solid var(--border);
+    color: var(--text-primary); font-size: 11px; padding: 5px 10px; border-radius: 6px;
+    white-space: nowrap; pointer-events: none; opacity: 0;
+    transition: opacity 0.2s; z-index: 999; box-shadow: var(--shadow);
+  }
+  .tip:hover::after { opacity: 1; }
+
+  /* Pipeline flow strip */
+  .pipeline-strip {
+    display: flex; align-items: center; gap: 0; overflow-x: auto;
+    padding: 10px 0; margin-bottom: 4px;
+  }
+  .pipe-node {
+    display: flex; align-items: center; flex-shrink: 0;
+  }
+  .pipe-label {
+    padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    border: 1px solid; cursor: pointer; white-space: nowrap;
+    transition: all var(--transition);
+  }
+  .pipe-label:hover { opacity: 0.8; }
+  .pipe-arrow {
+    color: var(--text-muted); font-size: 14px; padding: 0 4px;
+  }
+  .pipe-branch { display: flex; flex-direction: column; gap: 2px; }
+  .pipe-branch-label {
+    padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700;
+    border: 1px solid; cursor: pointer;
+    transition: all var(--transition);
+  }
+</style>
+</head>
+<body>
+
+<!-- Print-only header (hidden on screen) -->
+<div class="print-header" id="printHeader">
+  <h1>MIIC Program Activity Tracker</h1>
+  <p>Makerere Innovation &amp; Incubation Centre &nbsp;|&nbsp; Generated: <span id="printDate"></span></p>
+</div>
+
+<!-- ════════════ TOP NAV ════════════ -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <div class="brand-logo">M</div>
+    <div>
+      <div class="brand-title">MIIC Activity Tracker</div>
+      <div class="brand-sub">Makerere Innovation &amp; Incubation Centre</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="icon">🔍</span>
+    <input type="text" id="globalSearch" placeholder="Search programs, ventures, activities…" autocomplete="off" />
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <div class="topnav-right">
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <select class="role-select" id="roleSelect" title="Switch view role">
+      <option value="board">Board View</option>
+      <option value="manager">Manager View</option>
+      <option value="staff" selected>Program Staff</option>
+      <option value="field">Field Staff</option>
+    </select>
+    <button class="nav-icon-btn tip" data-tip="Notifications" id="bellBtn" onclick="scrollTo('section-alerts')">🔔<span class="badge" id="alertBadge"></span></button>
+    <button class="nav-icon-btn tip" data-tip="Settings" id="settingsBtn">⚙️</button>
+    <div class="avatar tip" data-tip="My Profile">MS</div>
+  </div>
+</nav>
+
+<!-- ════════════ SHELL ════════════ -->
+<div class="shell">
+
+  <!-- ════ LEFT SIDEBAR ════ -->
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-section-title">Programs</div>
+      <div class="program-list" id="programList">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Filters</div>
+      <div class="filter-group">
+        <div class="filter-label">Date Range</div>
+        <div class="date-range-row">
+          <input type="date" class="filter-input" id="dateFrom" value="2026-04-01" />
+          <input type="date" class="filter-input" id="dateTo"   value="2026-05-15" />
+        </div>
+      </div>
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">Activity Type</div>
+        <select class="filter-select" id="activityFilter">
+          <option value="all">All Activities</option>
+          <option value="workshop">Workshops</option>
+          <option value="coaching">Coaching / Mentorship</option>
+          <option value="gate">Stage Gate Review</option>
+          <option value="testing">Crowd Testing</option>
+          <option value="advisory">Advisory Clinic</option>
+          <option value="demo">Demo Day / Showcase</option>
+          <option value="investor">Investor Engagement</option>
+          <option value="pilot">Pilot / POC</option>
+        </select>
+      </div>
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">Status</div>
+        <select class="filter-select" id="statusFilter">
+          <option value="all">All Statuses</option>
+          <option value="on-track">On Track</option>
+          <option value="caution">Caution</option>
+          <option value="behind">Behind</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title">Quick Links</div>
+      <div class="quick-links">
+        <button class="quick-link" onclick="exportPDF()"><span class="ql-icon">📄</span>Export PDF</button>
+        <button class="quick-link" onclick="exportExcel()"><span class="ql-icon">📊</span>Export Excel</button>
+        <button class="quick-link" onclick="scrollTo('section-alerts')"><span class="ql-icon">🔔</span>Alerts &amp; Notifications</button>
+        <button class="quick-link" onclick="scrollTo('section-analytics')"><span class="ql-icon">📈</span>Detailed Analytics</button>
+        <button class="quick-link" onclick="scrollTo('section-timeline')"><span class="ql-icon">🗓️</span>Activity Timeline</button>
+        <button class="quick-link"><span class="ql-icon">📁</span>Reports Archive</button>
+        <button class="quick-link"><span class="ql-icon">⚙️</span>Settings</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <main class="main">
+
+    <!-- PIPELINE STRIP -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">MIIC Innovation Pipeline</div>
+      <div class="pipeline-strip" id="pipelineStrip"></div>
+    </div>
+
+    <!-- SECTION 1: OVERVIEW -->
+    <section id="section-overview">
+      <div class="section-header">
+        <div class="section-title"><span class="icon">🎯</span> Program Overview <span class="section-badge" id="cardCount">8 Programs</span></div>
+        <div class="section-actions">
+          <button class="btn btn-ghost" onclick="sortCards()">⇅ Sort</button>
+          <button class="btn btn-ghost" onclick="filterCards()">⚡ Filter</button>
+          <button class="btn btn-primary" onclick="openModal(null)">+ New Activity</button>
+        </div>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </section>
+
+    <!-- SECTION 2: TIMELINE -->
+    <section id="section-timeline">
+      <div class="section-header">
+        <div class="section-title"><span class="icon">📅</span> Activity Timeline</div>
+        <div class="section-actions">
+          <button class="btn btn-ghost" onclick="toggleFullTimeline()">⊞ Expand</button>
+        </div>
+      </div>
+      <div class="timeline-wrap">
+        <div class="timeline-controls">
+          <button class="zoom-btn" onclick="setZoom('1W',this)">1W</button>
+          <button class="zoom-btn active" onclick="setZoom('1M',this)">1M</button>
+          <button class="zoom-btn" onclick="setZoom('3M',this)">3M</button>
+          <button class="zoom-btn" onclick="setZoom('6M',this)">6M</button>
+          <button class="zoom-btn" onclick="setZoom('1Y',this)">1Y</button>
+          <div class="timeline-legend" id="timelineLegend"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: ANALYTICS -->
+    <section id="section-analytics">
+      <div class="section-header">
+        <div class="section-title"><span class="icon">📊</span> Detailed Analytics</div>
+      </div>
+
+      <div class="tabs" id="analyticsTabs"></div>
+
+      <div id="analyticsPanels">
+        <!-- panels injected by JS -->
+      </div>
+    </section>
+
+    <!-- SECTION 4: ALERTS -->
+    <section id="section-alerts">
+      <div class="section-header">
+        <div class="section-title"><span class="icon">🔔</span> Alerts &amp; Notifications <span class="section-badge" id="alertCount">8</span></div>
+        <div class="section-actions">
+          <button class="btn btn-ghost" onclick="acknowledgeAll()">✓ Acknowledge All</button>
+        </div>
+      </div>
+      <div class="alerts-grid" id="alertsGrid"></div>
+    </section>
+
+  </main>
+
+  <!-- ════ RIGHT SIDEBAR ════ -->
+  <aside class="rsidebar">
+    <div>
+      <div class="rside-section-title">Today's Quick Stats</div>
+      <div class="quick-stats" id="quickStats"></div>
+    </div>
+
+    <div>
+      <div class="rside-section-title">Top Performing Programs</div>
+      <div class="top-prog-list" id="topProgList"></div>
+    </div>
+
+    <div>
+      <div class="rside-section-title">Portfolio Completion</div>
+      <div class="completion-bars" id="completionBars"></div>
+    </div>
+
+    <div>
+      <div class="rside-section-title">Export &amp; Share</div>
+      <div class="export-section">
+        <button class="export-btn" onclick="exportPDF()"><span class="exp-icon">📄</span>Export as PDF</button>
+        <button class="export-btn" onclick="exportExcel()"><span class="exp-icon">📊</span>Export to Excel</button>
+        <button class="export-btn"><span class="exp-icon">🔗</span>Share Dashboard</button>
+      </div>
+    </div>
+  </aside>
+
+</div><!-- /shell -->
+
+<!-- ════════════ MODAL ════════════ -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Program Detail</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA — MIIC Programs (from Masterplan & M&E Framework)
+   These are fallback values used when the PHP API / DB
+   is unavailable (e.g. opening index.html as a file).
+═══════════════════════════════════════════════════════ */
+const FALLBACK_PROGRAMS = [
+  {
+    id: 'GIP', name: 'Graduate Innovation Program', abbr: 'GIP',
+    stage: 'Phase 1 — Pre-incubation', icon: '🎓', color: '#3b82f6',
+    desc: 'University student & graduate pipeline converting ideas into validated prototypes.',
+    status: 'on-track',
+    metrics: { today: 7, total: 42, completion: 68 },
+    kpis: {
+      enrolled: 38, target_enrolled: 50, women_pct: 44, youth_pct: 92,
+      prototypes: 24, graduation_rate: 72, vbp_progression: 58,
+      cohorts_ytd: 1, cohorts_target: 2, satisfaction: 4.2
+    },
+    activities_by_type: [14,18,6,4,8,5,0,0],
+    trend: [4,6,5,8,9,7,11,10,8,12,9,7],
+    distribution: [34,25,18,12,11],
+    budget_used: 61,
+    micro_seed_compliance: 100
+  },
+  {
+    id: 'TES', name: 'Technology Entrepreneurship Seed', abbr: 'TES',
+    stage: 'Phase 1 — Pre-incubation', icon: '🌱', color: '#10b981',
+    desc: 'Broader ecosystem pipeline for non-university technology innovators.',
+    status: 'on-track',
+    metrics: { today: 9, total: 51, completion: 74 },
+    kpis: {
+      enrolled: 44, target_enrolled: 50, women_pct: 41, youth_pct: 85,
+      prototypes: 28, graduation_rate: 76, vbp_progression: 62,
+      cohorts_ytd: 1, cohorts_target: 2, satisfaction: 4.3
+    },
+    activities_by_type: [16,20,5,3,6,4,0,0],
+    trend: [5,7,6,9,10,8,12,11,9,13,10,8],
+    distribution: [32,28,20,11,9],
+    budget_used: 58,
+    pctp_integration_rate: 33
+  },
+  {
+    id: 'VBP', name: 'Venture Building Program', abbr: 'VBP',
+    stage: 'Phase 2 — Venture Building', icon: '🏗️', color: '#8b5cf6',
+    desc: 'Transforms validated prototypes into market-ready ventures with traction and revenue.',
+    status: 'caution',
+    metrics: { today: 5, total: 38, completion: 55 },
+    kpis: {
+      enrolled: 18, target_enrolled: 20, women_pct: 39, youth_pct: 80,
+      mvps: 14, paying_customers: 280, revenue_usd: 38000,
+      graduation_rate: 72, irp_routing: 48, gmp_routing: 31,
+      cohorts_ytd: 1, cohorts_target: 1, satisfaction: 4.0
+    },
+    activities_by_type: [12,15,8,10,4,6,2,4],
+    trend: [3,5,4,7,8,6,9,8,7,10,8,6],
+    distribution: [28,22,24,16,10],
+    budget_used: 72,
+    pctp_completed: 13
+  },
+  {
+    id: 'PCTP', name: 'Product Crowd Testing Program', abbr: 'PCTP',
+    stage: 'Cross-cutting — Evidence Module', icon: '👥', color: '#f59e0b',
+    desc: 'Structured crowd testing cycles delivering product evidence across all pipeline stages.',
+    status: 'on-track',
+    metrics: { today: 3, total: 22, completion: 80 },
+    kpis: {
+      products_tested: 8, target_products: 10, testers_engaged: 240, target_testers: 300,
+      expert_tester_pct: 7, feedback_completion: 74, cycles_ytd: 3, cycles_target: 4,
+      ip_compliance: 100, data_incidents: 0, satisfaction: 4.4
+    },
+    activities_by_type: [2,4,2,18,2,2,0,0],
+    trend: [1,2,1,3,3,2,4,3,2,4,3,2],
+    distribution: [45,30,15,7,3],
+    budget_used: 48,
+    improvement_adoption: 55
+  },
+  {
+    id: 'SAP', name: 'Startup Advisory Program', abbr: 'SAP',
+    stage: 'Cross-cutting — Advisory Layer', icon: '💡', color: '#14b8a6',
+    desc: 'Always-on advisory front door providing diagnostics, routing, and alumni support.',
+    status: 'on-track',
+    metrics: { today: 18, total: 412, completion: 85 },
+    kpis: {
+      startups_supported: 412, target_supported: 600, clinic_sessions: 14, target_sessions: 20,
+      advisors: 9, target_advisors: 10, alumni_supported: 38,
+      routing_accuracy: 82, satisfaction: 4.1, conversion_rate: 32
+    },
+    activities_by_type: [8,22,4,2,120,6,0,0],
+    trend: [28,32,35,38,40,44,42,50,48,55,52,49],
+    distribution: [40,25,15,12,8],
+    budget_used: 44,
+    action_implementation: 54
+  },
+  {
+    id: 'IRP', name: 'Investment Readiness Program', abbr: 'IRP',
+    stage: 'Phase 3A — Capital Readiness', icon: '💰', color: '#ef4444',
+    desc: 'Prepares ventures for equity, grants, and structured fundraising through a 6-week bootcamp.',
+    status: 'caution',
+    metrics: { today: 4, total: 28, completion: 60 },
+    kpis: {
+      enrolled: 14, target_enrolled: 15, women_pct: 43, youth_pct: 71,
+      pitch_decks: 11, data_rooms: 10, financial_models: 12,
+      graduation_rate: 80, investor_meetings: 9, capital_raised_usd: 90000,
+      cohorts_ytd: 1, cohorts_target: 2, satisfaction: 4.2
+    },
+    activities_by_type: [6,8,3,1,4,4,8,0],
+    trend: [2,3,2,4,4,3,5,4,3,5,4,3],
+    distribution: [30,25,20,15,10],
+    budget_used: 65,
+    demo_day_score: 4.1
+  },
+  {
+    id: 'GMP', name: 'Growth Management Program', abbr: 'GMP',
+    stage: 'Phase 3B — Scaling & Bankability', icon: '📈', color: '#6366f1',
+    desc: '24–36 month portfolio program for operational scaling, governance and debt readiness.',
+    status: 'on-track',
+    metrics: { today: 6, total: 89, completion: 71 },
+    kpis: {
+      portfolio_active: 22, target_portfolio: 30, women_pct: 40, sector_diversity: 6,
+      growth_plans: 22, kpi_dashboards: 20, bankability_certified: 14,
+      debt_accessed: 9, revenue_growth_pct: 48, jobs_created: 118,
+      satisfaction: 4.0, default_rate: 4.5
+    },
+    activities_by_type: [10,18,6,2,8,2,4,4],
+    trend: [6,7,8,9,10,9,11,12,11,13,12,10],
+    distribution: [35,28,18,12,7],
+    budget_used: 78,
+    reporting_compliance: 95
+  },
+  {
+    id: 'IDIA', name: 'Industry Digital Innovation Accelerator', abbr: 'IDIA',
+    stage: 'Ecosystem Plug-in', icon: '🏭', color: '#ec4899',
+    desc: 'Industry challenge cohorts linking ventures to pilots, POCs, and commercial contracts.',
+    status: 'behind',
+    metrics: { today: 2, total: 31, completion: 42 },
+    kpis: {
+      partners: 3, target_partners: 5, startups_admitted: 14, target_admitted: 20,
+      pilots: 4, target_pilots: 5, contracts_lois: 2, revenue_usd: 28000,
+      miic_pipeline_pct: 52, cohorts_ytd: 1, cohorts_target: 2, satisfaction: 3.8
+    },
+    activities_by_type: [6,10,3,3,2,3,2,8],
+    trend: [1,2,2,3,2,3,4,3,2,4,3,2],
+    distribution: [25,20,22,18,15],
+    budget_used: 55,
+    pilot_conversion: 50
+  }
+];
+
+const ACTIVITY_TYPES = ['Workshops','Coaching','Gate Reviews','Testing','Advisory','Demo Days','Investor Eng.','Pilots'];
+
+const FALLBACK_ALERTS = [
+  { id:1, type:'overdue',  program:'IDIA', title:'Q2 Cohort Launch Delayed', desc:'IDIA Cohort 2 scheduled for May 1 has not been launched. Only 3 of 5 industry partner MoUs signed. Risk to annual target of 2 cohorts.', tag:'IDIA', time:'3 days overdue', icon:'🔴' },
+  { id:2, type:'deadline', program:'VBP',  title:'VBP Commercialization Exit Gate in 2 Weeks', desc:'6 of 18 enrolled ventures have incomplete PCTP evidence. PCTP reports must be uploaded before graduation panel on May 29.', tag:'VBP', time:'Due May 29, 2026', icon:'🟡' },
+  { id:3, type:'deadline', program:'IRP',  title:'IRP Cohort 2 Applications Close Soon', desc:'Cohort 2 application deadline is May 22. Only 9 applications received against a target of 25+. Outreach needed urgently.', tag:'IRP', time:'Due May 22, 2026', icon:'🟡' },
+  { id:4, type:'overdue',  program:'GIP',  title:'GIP Cohort 1 Evidence Pack Backlog', desc:'4 ventures have incomplete evidence packs — missing user-test logs. Coach sign-off pending for 3 ventures.', tag:'GIP', time:'2 days overdue', icon:'🔴' },
+  { id:5, type:'info',     program:'GMP',  title:'GMP Monthly Reports Due', desc:'Monthly reporting packages for May 2026 are due from all 22 active portfolio companies by May 20. 7 submissions received so far.', tag:'GMP', time:'Due May 20, 2026', icon:'🔵' },
+  { id:6, type:'info',     program:'SAP',  title:'SAP Clinic #15 Scheduled', desc:'Legal & IP clinic session scheduled for May 18. 12 ventures pre-registered. Venue and advisor confirmed.', tag:'SAP', time:'May 18, 2026', icon:'🔵' },
+  { id:7, type:'deadline', program:'TES',  title:'TES Demo Day Preparations', desc:'TES Cohort 1 Demo Day scheduled for May 28. 8 pitch decks not yet reviewed by coach. Logistics finalisation needed.', tag:'TES', time:'Due May 20, 2026', icon:'🟡' },
+  { id:8, type:'info',     program:'PCTP', title:'PCTP Cycle 4 Portal Open', desc:'Product Crowd Testing Cycle 4 portal is now open. 3 products registered. Target: 10 products per year. Encourage VBP ventures to enroll.', tag:'PCTP', time:'Open now', icon:'🔵' }
+];
+
+const PIPELINE_NODES = [
+  { label:'SAP Entry', color:'#14b8a6', prog:'SAP', arrow:true },
+  { label:'GIP', color:'#3b82f6', prog:'GIP', arrow:true },
+  { label:'TES', color:'#10b981', prog:'TES', arrow:true },
+  { label:'VBP + PCTP', color:'#8b5cf6', prog:'VBP', arrow:true },
+  { label:'IRP', color:'#ef4444', prog:'IRP', branch:true, arrow:false },
+  { label:'GMP', color:'#6366f1', prog:'GMP', branch:true, arrow:true },
+  { label:'IDIA', color:'#ec4899', prog:'IDIA', arrow:false }
+];
+
+/* ═══════════════════════════════════════════════════════
+   API CONFIG
+   Change API_BASE to match your PHP server URL.
+   e.g. XAMPP default: http://localhost/Program Dashboard/api
+═══════════════════════════════════════════════════════ */
+const API_BASE = 'api';
+
+// Live data arrays — populated by init() from the DB.
+// Fall back to FALLBACK_* constants if the API is unreachable.
+let PROGRAMS = [];
+let ALERTS   = [];
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS — security & normalisation
+═══════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Normalise alert objects from both DB format (program_id, description)
+// and fallback format (program, desc) into a single consistent shape.
+function normalizeAlert(a) {
+  return {
+    id:      a.id      ?? null,
+    type:    a.type    ?? 'info',
+    program: a.program_id ?? a.program ?? '',
+    title:   a.title   ?? '',
+    desc:    a.description ?? a.desc ?? '',
+    tag:     a.tag     ?? '',
+    time:    a.time    ?? '',
+    icon:    a.icon    ?? '🔔',
+  };
+}
+
+async function init() {
+  // Show a subtle loading state
+  document.body.style.opacity = '0.6';
+  try {
+    const [progsRes, alertsRes, actsRes] = await Promise.all([
+      fetch(`${API_BASE}/programs.php`),
+      fetch(`${API_BASE}/alerts.php`),
+      fetch(`${API_BASE}/activities.php`),
+    ]);
+    if (!progsRes.ok || !alertsRes.ok) throw new Error('API error');
+
+    PROGRAMS = await progsRes.json();
+    ALERTS   = (await alertsRes.json()).map(normalizeAlert);
+
+    // Merge DB-persisted logged activities into loggedActivities store
+    const dbActs = await actsRes.json();
+    dbActs.forEach(a => {
+      if (!loggedActivities.find(x => String(x.id) === String(a.id))) {
+        loggedActivities.push(a);
+      }
+    });
+  } catch (_) {
+    // API unavailable — use hardcoded fallback data
+    PROGRAMS = FALLBACK_PROGRAMS.map(p => JSON.parse(JSON.stringify(p)));
+    ALERTS   = FALLBACK_ALERTS.map(a => normalizeAlert({...a}));
+  }
+  document.body.style.opacity = '';
+  activeTabId = PROGRAMS[0]?.id || 'GIP';
+  renderAll();
+  simulateLive();
+  triggerAutoAlerts();
+  startAutoRefresh();
+}
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const pc = n => `${n}%`;
+const fmt = n => n >= 1000 ? `${(n/1000).toFixed(1)}k` : n;
+const statusClass = s => ({ 'on-track':'status-green','caution':'status-yellow','behind':'status-red' }[s]);
+const statusDotClass = s => ({ 'on-track':'status-dot-green','caution':'status-dot-yellow','behind':'status-dot-red' }[s]);
+const statusLabel = s => ({ 'on-track':'On Track','caution':'Caution','behind':'Behind' }[s]);
+
+let activeProgram = 'all';
+let activeZoom = '1M';
+let sortAsc = true;
+let activeTabId = 'GIP';
+let timelineChart = null;
+let analyticsCharts = {};
+
+/* ═══════════════════════════════════════════════════════
+   RENDER PROGRAM LIST (SIDEBAR)
+═══════════════════════════════════════════════════════ */
+function renderSidebarList() {
+  const container = $('programList');
+  let html = `<div class="prog-item ${activeProgram==='all'?'active':''}" onclick="selectProgram('all')">
+    <div class="prog-dot" style="background:#7c829c"></div>
+    <div class="prog-info"><div class="prog-name">All Programs</div><div class="prog-stage">Portfolio View</div></div>
+    <div class="prog-count">${PROGRAMS.length}</div>
+  </div>`;
+  PROGRAMS.forEach(p => {
+    html += `<div class="prog-item ${activeProgram===p.id?'active':''}" onclick="selectProgram('${p.id}')">
+      <div class="prog-dot" style="background:${p.color}"></div>
+      <div class="prog-info">
+        <div class="prog-name">${p.abbr}</div>
+        <div class="prog-stage">${p.stage.split('—')[0].trim()}</div>
+      </div>
+      <div class="prog-count">${p.metrics.today}</div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER PIPELINE STRIP
+═══════════════════════════════════════════════════════ */
+function renderPipeline() {
+  const strip = $('pipelineStrip');
+  let html = '';
+  PIPELINE_NODES.forEach((n, i) => {
+    html += `<div class="pipe-node">
+      <span class="pipe-label" style="color:${n.color};border-color:${n.color}40;background:${n.color}15"
+        onclick="selectProgram('${n.prog}')">${n.label}</span>
+      ${n.arrow ? `<span class="pipe-arrow">→</span>` : ''}
+    </div>`;
+  });
+  strip.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER PROGRAM CARDS
+═══════════════════════════════════════════════════════ */
+function renderCards() {
+  const grid = $('cardsGrid');
+  const progs = activeProgram === 'all' ? PROGRAMS : PROGRAMS.filter(p => p.id === activeProgram);
+  $('cardCount').textContent = `${progs.length} Program${progs.length!==1?'s':''}`;
+
+  grid.innerHTML = progs.map(p => `
+    <div class="prog-card fadeIn" onclick="openModal('${p.id}')">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:${p.color}"></div>
+      <div class="card-header">
+        <div class="card-prog-id">
+          <div class="card-icon-wrap" style="background:${p.color}20">${p.icon}</div>
+          <div>
+            <div class="card-prog-name">${p.abbr}</div>
+            <div class="card-prog-stage">${p.stage}</div>
+          </div>
+        </div>
+        <div class="status-pill ${statusClass(p.status)}">
+          <div class="status-dot ${statusDotClass(p.status)}"></div>
+          ${statusLabel(p.status)}
+        </div>
+      </div>
+
+      <div class="card-metrics">
+        <div class="metric-item">
+          <div class="metric-val" style="color:${p.color}">${p.metrics.today}</div>
+          <div class="metric-lbl">Today</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val">${fmt(p.metrics.total)}</div>
+          <div class="metric-lbl">Total Activities</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val">${p.metrics.completion}%</div>
+          <div class="metric-lbl">Completion</div>
+        </div>
+      </div>
+
+      <div class="card-progress">
+        <div class="progress-row">
+          <span class="progress-lbl">Overall Completion</span>
+          <span class="progress-pct" style="color:${p.color}">${p.metrics.completion}%</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width:${p.metrics.completion}%;background:${p.color}"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   TIMELINE CHART
+═══════════════════════════════════════════════════════ */
+function buildTimelineDatasets(zoom) {
+  const months12 = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
+  const months6  = ['Dec','Jan','Feb','Mar','Apr','May'];
+  const months3  = ['Mar','Apr','May'];
+  const weeks1   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let labels;
+  if(zoom==='1Y') labels=months12;
+  else if(zoom==='6M') labels=months6;
+  else if(zoom==='3M') labels=months3;
+  else if(zoom==='1W') labels=weeks1;
+  else labels=months12.slice(6); // 1M: 6 points
+
+  const progs = activeProgram==='all' ? PROGRAMS : PROGRAMS.filter(p=>p.id===activeProgram);
+  const datasets = progs.map(p => {
+    let data = p.trend;
+    if(zoom==='6M') data=p.trend.slice(6);
+    else if(zoom==='3M') data=p.trend.slice(9);
+    else if(zoom==='1W') data=p.trend.slice(5).map(v=>Math.round(v/4));
+    else data=p.trend.slice(6); // 1M
+    return {
+      label: p.abbr,
+      data: data.slice(0,labels.length),
+      borderColor: p.color,
+      backgroundColor: p.color+'22',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: 0.4,
+      fill: false
+    };
+  });
+  return { labels, datasets };
+}
+
+function renderTimeline() {
+  const ctx = $('timelineChart').getContext('2d');
+  if(timelineChart) timelineChart.destroy();
+  const { labels, datasets } = buildTimelineDatasets(activeZoom);
+
+  timelineChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2d3250',
+          borderWidth: 1,
+          titleColor: '#e8eaf0',
+          bodyColor: '#a0a8c8',
+          padding: 10
+        }
+      },
+      scales: {
+        x: { grid:{ color:'#2d3250' }, ticks:{ color:'#7c829c', font:{size:11} } },
+        y: { grid:{ color:'#2d3250' }, ticks:{ color:'#7c829c', font:{size:11} }, beginAtZero:true }
+      }
+    }
+  });
+
+  // Legend
+  const progs = activeProgram==='all' ? PROGRAMS : PROGRAMS.filter(p=>p.id===activeProgram);
+  $('timelineLegend').innerHTML = progs.map(p=>`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${p.color}"></div>${p.abbr}
+    </div>`).join('');
+}
+
+function setZoom(z, btn) {
+  activeZoom = z;
+  document.querySelectorAll('.zoom-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTimeline();
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANALYTICS TABS & CHARTS
+═══════════════════════════════════════════════════════ */
+function renderAnalytics() {
+  const tabsEl  = $('analyticsTabs');
+  const panels  = $('analyticsPanels');
+  const progs   = activeProgram==='all' ? PROGRAMS : PROGRAMS.filter(p=>p.id===activeProgram);
+
+  tabsEl.innerHTML = progs.map(p=>`
+    <button class="tab-btn ${activeTabId===p.id?'active':''}" onclick="switchTab('${p.id}')">
+      <div class="tab-dot" style="background:${p.color}"></div>${p.abbr}
+    </button>`).join('');
+
+  panels.innerHTML = progs.map(p => buildPanel(p)).join('');
+
+  // Destroy old charts before creating new ones
+  Object.values(analyticsCharts).forEach(c=>{try{c.destroy();}catch(e){}});
+  analyticsCharts={};
+
+  progs.forEach(p => {
+    if(document.getElementById(`panel-${p.id}`).style.display!=='none') {
+      createProgramCharts(p);
+    }
+  });
+
+  activateTab(activeTabId);
+}
+
+function buildPanel(p) {
+  const tableRows = generateTableRows(p);
+  return `<div class="tab-panel ${activeTabId===p.id?'active':''}" id="panel-${p.id}">
+    <div class="analytics-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Activities by Type</div>
+        <div style="height:200px;position:relative"><canvas id="bar-${p.id}"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Trend Over Time</div>
+        <div style="height:200px;position:relative"><canvas id="line-${p.id}"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Activity Distribution</div>
+        <div style="height:200px;position:relative"><canvas id="pie-${p.id}"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input type="text" class="table-search" placeholder="Search activities…" oninput="filterTable(this,'tbl-${p.id}')" />
+        <button class="btn btn-ghost" style="font-size:11px" onclick="exportTableCSV('tbl-${p.id}','${p.abbr}_activities')">⬇ CSV</button>
+        <span class="records-count" id="count-${p.id}">Showing ${tableRows.length} records</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="tbl-${p.id}">
+          <thead>
+            <tr>
+              <th onclick="sortTable('tbl-${p.id}',0)">Activity <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-${p.id}',1)">Type <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-${p.id}',2)">Date <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-${p.id}',3)">Status <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('tbl-${p.id}',4)">Responsible <span class="sort-icon">↕</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows.map(r=>`<tr>
+              <td>${r.isNew ? `<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:${p.color}33;color:${p.color};font-weight:700;margin-right:5px">NEW</span>` : ''}${escHtml(r.name)}</td>
+              <td><span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${p.color}22;color:${p.color};font-weight:600">${escHtml(r.type)}</span></td>
+              <td style="color:var(--text-muted)">${escHtml(r.date)}</td>
+              <td><span class="table-status"><span class="status-dot ${statusDotClass(r.status)}" style="margin-right:4px"></span>${statusLabel(r.status)}</span></td>
+              <td style="color:var(--text-accent)">${escHtml(r.person)}</td>
+              <td><button class="alert-btn" style="font-size:10px" onclick="viewActivity('${escHtml(r.id)}','${p.id}')">View</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function generateTableRows(p) {
+  const types = ['Workshop','Coaching','Gate Review','Testing','Advisory','Demo Day','Investor Eng.','Pilot'];
+  const statuses = ['on-track','on-track','on-track','caution','behind'];
+  const people = ['Sarah K.','James M.','Anna T.','David O.','Grace N.','Peter L.','Faith W.','Moses B.'];
+  const rows = [];
+  let day = 1;
+  ACTIVITY_TYPES.forEach((t,i)=>{
+    const count = p.activities_by_type[i];
+    for(let j=0;j<Math.min(count,3);j++){
+      rows.push({
+        id: `seed-${p.id}-${i}-${j}`,
+        name: `${p.abbr} ${t} ${j+1}`,
+        type: t,
+        date: `2026-05-${String(day%28+1).padStart(2,'0')}`,
+        status: statuses[Math.floor(Math.random()*statuses.length)],
+        person: people[(day+j)%people.length],
+        notes: ''
+      });
+      day+=2;
+    }
+  });
+  // Prepend any user-logged activities for this program
+  const userRows = loggedActivities
+    .filter(a=>a.progId===p.id)
+    .map(a=>({ id: String(a.id), name: a.name, type: a.type, date: a.date, status: a.status, person: a.person, notes: a.notes, isNew: true }));
+  return [...userRows, ...rows.slice(0,12)];
+}
+
+function createProgramCharts(p) {
+  const barCtx  = document.getElementById(`bar-${p.id}`)?.getContext('2d');
+  const lineCtx = document.getElementById(`line-${p.id}`)?.getContext('2d');
+  const pieCtx  = document.getElementById(`pie-${p.id}`)?.getContext('2d');
+
+  const chartDefaults = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        backgroundColor:'#1a1d27',borderColor:'#2d3250',borderWidth:1,
+        titleColor:'#e8eaf0',bodyColor:'#a0a8c8',padding:8
+      }
+    }
+  };
+
+  if(barCtx && !analyticsCharts[`bar-${p.id}`]) {
+    analyticsCharts[`bar-${p.id}`] = new Chart(barCtx, {
+      type:'bar',
+      data:{
+        labels: ACTIVITY_TYPES,
+        datasets:[{ data:p.activities_by_type, backgroundColor:p.color+'88',
+          borderColor:p.color, borderWidth:1, borderRadius:4 }]
+      },
+      options:{
+        ...chartDefaults,
+        scales:{
+          x:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:9},maxRotation:45}},
+          y:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:10}},beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  if(lineCtx && !analyticsCharts[`line-${p.id}`]) {
+    analyticsCharts[`line-${p.id}`] = new Chart(lineCtx, {
+      type:'line',
+      data:{
+        labels:['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'],
+        datasets:[{
+          data:p.trend, borderColor:p.color, backgroundColor:p.color+'22',
+          borderWidth:2, pointRadius:3, tension:0.4, fill:true
+        }]
+      },
+      options:{
+        ...chartDefaults,
+        scales:{
+          x:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:9}}},
+          y:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:10}},beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  if(pieCtx && !analyticsCharts[`pie-${p.id}`]) {
+    analyticsCharts[`pie-${p.id}`] = new Chart(pieCtx, {
+      type:'doughnut',
+      data:{
+        labels:['Workshops','Coaching','Gate Reviews','Testing','Advisory'],
+        datasets:[{
+          data:p.distribution,
+          backgroundColor:[p.color+'cc',p.color+'99',p.color+'66',p.color+'44',p.color+'22'],
+          borderColor:p.color+'44', borderWidth:1
+        }]
+      },
+      options:{
+        ...chartDefaults,
+        plugins:{
+          legend:{display:true,position:'right',labels:{color:'#7c829c',font:{size:10},boxWidth:10}}
+        }
+      }
+    });
+  }
+}
+
+function switchTab(id) {
+  activeTabId = id;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll(`.tab-btn`).forEach(b=>{ if(b.textContent.trim().startsWith(id)) b.classList.add('active'); });
+  document.getElementById(`panel-${id}`)?.classList.add('active');
+  createProgramCharts(PROGRAMS.find(p=>p.id===id));
+}
+
+function activateTab(id) {
+  switchTab(id);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ALERTS
+═══════════════════════════════════════════════════════ */
+function renderAlerts() {
+  const icons = { overdue:'🚨', deadline:'⏰', info:'ℹ️' };
+  const bgMap = { overdue:'rgba(239,68,68,0.15)', deadline:'rgba(245,158,11,0.15)', info:'rgba(59,130,246,0.15)' };
+  let alerts = ALERTS;
+  if(activeProgram!=='all') alerts = ALERTS.filter(a=>a.program===activeProgram);
+  $('alertCount').textContent = alerts.length;
+
+  $('alertsGrid').innerHTML = alerts.length ? alerts.map((a,i)=>`
+    <div class="alert-item alert-${a.type}" id="alert-${i}">
+      <div class="alert-icon-wrap" style="background:${bgMap[a.type]}">${icons[a.type]}</div>
+      <div class="alert-body">
+        <div class="alert-title">${escHtml(a.title)}</div>
+        <div class="alert-desc">${escHtml(a.desc)}</div>
+        <div class="alert-meta">
+          <span class="alert-tag">${escHtml(a.tag)}</span>
+          <span class="alert-time">📅 ${escHtml(a.time)}</span>
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="alert-btn" onclick="acknowledgeAlert(${JSON.stringify(a.id)},${i})">✓ Acknowledge</button>
+        <button class="alert-btn">↗ Assign</button>
+      </div>
+    </div>`).join('')
+  : `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">✅ No active alerts</div>`;
+}
+
+function acknowledgeAlert(alertId, idx) {
+  // Persist to DB if we have a real id (non-null)
+  if (alertId !== null && alertId !== undefined) {
+    fetch(`${API_BASE}/alerts.php`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'acknowledge', id: alertId }),
+    }).catch(() => {});
+  }
+  // Remove from local state immediately (optimistic update)
+  ALERTS = ALERTS.filter((_, i) => i !== idx);
+  renderAlerts();
+  updateBell();
+}
+function acknowledgeAll() {
+  // Persist to DB (fire-and-forget)
+  fetch(`${API_BASE}/alerts.php`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ action: 'acknowledge_all' }),
+  }).catch(()=>{});
+  // Update local state immediately
+  ALERTS = [];
+  renderAlerts();
+  const cnt = $('alertCount');
+  if(cnt) cnt.textContent = '0';
+}
+
+/* ═══════════════════════════════════════════════════════
+   RIGHT SIDEBAR
+═══════════════════════════════════════════════════════ */
+function renderRightSidebar() {
+  const totalToday = PROGRAMS.reduce((s,p)=>s+p.metrics.today,0);
+  const totalActs  = PROGRAMS.reduce((s,p)=>s+p.metrics.total,0);
+  const avgCompl   = Math.round(PROGRAMS.reduce((s,p)=>s+p.metrics.completion,0)/PROGRAMS.length);
+
+  $('quickStats').innerHTML = `
+    <div class="qstat">
+      <div class="qstat-left">
+        <div class="qstat-label">Activities Today</div>
+        <div class="qstat-value" style="color:#3b82f6">${totalToday}</div>
+        <div class="qstat-delta delta-up">↑ 12% vs yesterday</div>
+      </div>
+      <div class="qstat-icon">⚡</div>
+    </div>
+    <div class="qstat">
+      <div class="qstat-left">
+        <div class="qstat-label">Total Activities</div>
+        <div class="qstat-value">${fmt(totalActs)}</div>
+        <div class="qstat-delta delta-up">↑ 8% this week</div>
+      </div>
+      <div class="qstat-icon">📋</div>
+    </div>
+    <div class="qstat">
+      <div class="qstat-left">
+        <div class="qstat-label">Avg. Completion</div>
+        <div class="qstat-value" style="color:#22c55e">${avgCompl}%</div>
+        <div class="qstat-delta delta-up">↑ 3pts this month</div>
+      </div>
+      <div class="qstat-icon">🎯</div>
+    </div>
+    <div class="qstat">
+      <div class="qstat-left">
+        <div class="qstat-label">Active Ventures</div>
+        <div class="qstat-value">138</div>
+        <div class="qstat-delta delta-up">↑ 14 new this cohort</div>
+      </div>
+      <div class="qstat-icon">🚀</div>
+    </div>`;
+
+  const sorted = [...PROGRAMS].sort((a,b)=>b.metrics.completion-a.metrics.completion).slice(0,5);
+  const max = sorted[0].metrics.completion;
+  $('topProgList').innerHTML = sorted.map((p,i)=>`
+    <div class="top-prog-item">
+      <div class="tp-rank">${i+1}</div>
+      <div class="tp-dot" style="background:${p.color}"></div>
+      <div class="tp-body">
+        <div class="tp-name">${p.abbr}</div>
+        <div class="tp-val">${p.metrics.completion}% complete</div>
+      </div>
+      <div class="tp-bar-wrap">
+        <div class="tp-bar" style="width:${Math.round(p.metrics.completion/max*100)}%;background:${p.color}"></div>
+      </div>
+    </div>`).join('');
+
+  $('completionBars').innerHTML = PROGRAMS.map(p=>`
+    <div class="cbar-item">
+      <div class="cbar-header">
+        <span class="cbar-name" style="color:${p.color}">${p.abbr}</span>
+        <span class="cbar-pct" style="color:${p.color}">${p.metrics.completion}%</span>
+      </div>
+      <div class="cbar-track">
+        <div class="cbar-fill" style="width:${p.metrics.completion}%;background:${p.color}"></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROGRAM SELECTION
+═══════════════════════════════════════════════════════ */
+function selectProgram(id) {
+  activeProgram = id;
+  if(id!=='all' && activeTabId!==id) activeTabId=id;
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL (DRILL-DOWN)
+═══════════════════════════════════════════════════════ */
+function openModal(id) {
+  const overlay = $('modalOverlay');
+  if(!id) {
+    $('modalTitle').textContent = 'Log New Activity';
+    $('modalBody').innerHTML = buildNewActivityForm();
+    overlay.classList.add('open');
+    return;
+  }
+  const p = PROGRAMS.find(x=>x.id===id);
+  if(!p) return;
+  $('modalTitle').innerHTML = `<span style="color:${p.color}">${p.icon} ${p.name}</span>`;
+  $('modalBody').innerHTML = buildModalBody(p);
+  overlay.classList.add('open');
+}
+
+function buildModalBody(p) {
+  const kpiLines = getKPILines(p);
+  return `
+  <div style="margin-bottom:16px">
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.6">${p.desc}</p>
+    <div style="margin-top:8px">
+      <span class="status-pill ${statusClass(p.status)}" style="display:inline-flex">
+        <div class="status-dot ${statusDotClass(p.status)}"></div>${statusLabel(p.status)}
+      </span>
+    </div>
+  </div>
+
+  <div class="modal-grid" style="margin-bottom:20px">
+    <div class="modal-stat">
+      <div class="modal-stat-label">Activities Today</div>
+      <div class="modal-stat-value" style="color:${p.color}">${p.metrics.today}</div>
+      <div class="modal-stat-sub">of ${p.metrics.total} total</div>
+    </div>
+    <div class="modal-stat">
+      <div class="modal-stat-label">Completion Rate</div>
+      <div class="modal-stat-value">${p.metrics.completion}%</div>
+      <div class="modal-stat-sub">
+        <div style="height:6px;background:var(--bg-hover);border-radius:3px;margin-top:4px">
+          <div style="height:100%;width:${p.metrics.completion}%;background:${p.color};border-radius:3px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-stat">
+      <div class="modal-stat-label">Budget Utilized</div>
+      <div class="modal-stat-value">${p.budget_used}%</div>
+      <div class="modal-stat-sub">FY 2026/27</div>
+    </div>
+    <div class="modal-stat">
+      <div class="modal-stat-label">Satisfaction Score</div>
+      <div class="modal-stat-value">${getKPIVal(p,'satisfaction') || '—'}/5.0</div>
+      <div class="modal-stat-sub">Participant avg.</div>
+    </div>
+  </div>
+
+  <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Key Performance Indicators</div>
+  <div class="modal-kpi-list">
+    ${kpiLines.map(l=>`
+    <div class="modal-kpi-item">
+      <span class="modal-kpi-label">${l.label}</span>
+      <span class="modal-kpi-value" style="color:${l.color||'var(--text-primary)'}">${l.value}</span>
+    </div>`).join('')}
+  </div>
+
+  <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="closeModal()">✓ Close</button>
+    <button class="btn btn-ghost" onclick="selectProgram('${p.id}');closeModal()">View Full Details</button>
+    <button class="btn btn-ghost" onclick="exportPDF()">📄 Export Report</button>
+  </div>`;
+}
+
+function getKPIVal(p, key) { return p.kpis[key]; }
+
+function getKPILines(p) {
+  const lines = [];
+  const k = p.kpis;
+  const g = (val, t, u='%') => ({ label:'', value:`${val}${u} / ${t}${u}`, color: val>=t ? '#22c55e' : val>=t*0.8 ? '#f59e0b' : '#ef4444' });
+
+  if(p.id==='GIP'||p.id==='TES') {
+    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}`});
+    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}`, color: k.enrolled>=k.target_enrolled*0.8?'#22c55e':'#f59e0b'});
+    lines.push({label:'Women-led (%)',               value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
+    lines.push({label:'Validated Prototypes',        value:`${k.prototypes}`});
+    lines.push({label:'Graduation Rate',             value:`${k.graduation_rate}%`, color: k.graduation_rate>=70?'#22c55e':'#f59e0b'});
+    lines.push({label:'VBP Progression Rate',        value:`${k.vbp_progression}%`, color: k.vbp_progression>=50?'#22c55e':'#f59e0b'});
+    lines.push({label:'Satisfaction Score',          value:`${k.satisfaction}/5.0`});
+  } else if(p.id==='VBP') {
+    lines.push({label:'Enrolled / Target',           value:`${k.enrolled} / ${k.target_enrolled}`});
+    lines.push({label:'Women-led (%)',               value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
+    lines.push({label:'Functional MVPs',             value:`${k.mvps}`});
+    lines.push({label:'Paying Customers (total)',    value:k.paying_customers});
+    lines.push({label:'Revenue Generated (USD)',     value:`$${k.revenue_usd.toLocaleString()}`});
+    lines.push({label:'PCTP Cycles Completed',       value:k.pctp_completed});
+    lines.push({label:'Routing to IRP (%)',          value:`${k.irp_routing}%`});
+    lines.push({label:'Routing to GMP (%)',          value:`${k.gmp_routing}%`});
+  } else if(p.id==='PCTP') {
+    lines.push({label:'Products Tested / Target',   value:`${k.products_tested} / ${k.target_products}`});
+    lines.push({label:'Testers Engaged / Target',   value:`${k.testers_engaged} / ${k.target_testers}`});
+    lines.push({label:'Feedback Completion Rate',   value:`${k.feedback_completion}%`, color: k.feedback_completion>=70?'#22c55e':'#f59e0b'});
+    lines.push({label:'IP/Conf. Compliance',        value:`${k.ip_compliance}%`, color:'#22c55e'});
+    lines.push({label:'Data Privacy Incidents',     value:k.data_incidents===0?'✓ Zero':'⚠ '+k.data_incidents, color: k.data_incidents===0?'#22c55e':'#ef4444'});
+    lines.push({label:'Testing Cycles YTD',         value:`${k.cycles_ytd} / ${k.cycles_target}`});
+    lines.push({label:'MVP Improvement Adoption',   value:`${p.improvement_adoption}%`});
+  } else if(p.id==='SAP') {
+    lines.push({label:'Startups Supported',         value:`${k.startups_supported} / ${k.target_supported}`});
+    lines.push({label:'Clinic Sessions YTD',        value:`${k.clinic_sessions} / ${k.target_sessions}`});
+    lines.push({label:'Active Advisors',             value:`${k.advisors} / ${k.target_advisors}`});
+    lines.push({label:'Alumni Supported',           value:k.alumni_supported});
+    lines.push({label:'Routing Accuracy',           value:`${k.routing_accuracy}%`, color: k.routing_accuracy>=80?'#22c55e':'#f59e0b'});
+    lines.push({label:'Conversion Rate (→Program)', value:`${k.conversion_rate}%`});
+    lines.push({label:'Satisfaction Score',         value:`${k.satisfaction}/5.0`});
+  } else if(p.id==='IRP') {
+    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}`});
+    lines.push({label:'Pitch Decks Completed',      value:k.pitch_decks});
+    lines.push({label:'Data Rooms at Min. Standard',value:k.data_rooms});
+    lines.push({label:'Financial Models Produced',  value:k.financial_models});
+    lines.push({label:'Graduation Rate',            value:`${k.graduation_rate}%`, color: k.graduation_rate>=85?'#22c55e':'#f59e0b'});
+    lines.push({label:'Investor Meetings Secured',  value:k.investor_meetings});
+    lines.push({label:'Capital Raised YTD (USD)',   value:`$${k.capital_raised_usd.toLocaleString()}`});
+    lines.push({label:'Demo Day Score',             value:`${p.demo_day_score}/5.0`});
+  } else if(p.id==='GMP') {
+    lines.push({label:'Active Portfolio / Target',  value:`${k.portfolio_active} / ${k.target_portfolio}`});
+    lines.push({label:'Women-led Companies (%)',    value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
+    lines.push({label:'Sector Diversity',           value:`${k.sector_diversity} sectors`});
+    lines.push({label:'Bankability Certified',      value:`${k.bankability_certified} companies`});
+    lines.push({label:'Debt Facilities Accessed',  value:`${k.debt_accessed} companies`});
+    lines.push({label:'Portfolio Avg. Revenue Growth',value:`${k.revenue_growth_pct}%`});
+    lines.push({label:'Jobs Created (annual)',      value:k.jobs_created});
+    lines.push({label:'Portfolio Default Rate',     value:`${k.default_rate}%`, color: k.default_rate<5?'#22c55e':k.default_rate<10?'#f59e0b':'#ef4444'});
+    lines.push({label:'Reporting Compliance',       value:`${p.reporting_compliance}%`, color:'#22c55e'});
+  } else if(p.id==='IDIA') {
+    lines.push({label:'Industry Partners / Target', value:`${k.partners} / ${k.target_partners}`, color: k.partners<k.target_partners?'#f59e0b':'#22c55e'});
+    lines.push({label:'Startups Admitted / Target', value:`${k.startups_admitted} / ${k.target_admitted}`});
+    lines.push({label:'Pilots Implemented',         value:`${k.pilots} / ${k.target_pilots}`});
+    lines.push({label:'Contracts / LOIs Secured',  value:k.contracts_lois});
+    lines.push({label:'Revenue from Contracts (USD)',value:`$${k.revenue_usd.toLocaleString()}`});
+    lines.push({label:'MIIC Pipeline Ventures (%)', value:`${k.miic_pipeline_pct}%`});
+    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}`, color: k.cohorts_ytd<k.cohorts_target?'#ef4444':'#22c55e'});
+    lines.push({label:'Pilot-to-Contract Rate',    value:`${p.pilot_conversion}%`});
+  }
+  return lines;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOGGED ACTIVITIES STORE
+═══════════════════════════════════════════════════════ */
+const loggedActivities = [];   // persists in memory for this session
+
+function buildNewActivityForm() {
+  const today = new Date().toISOString().split('T')[0];
+  return `<div style="display:flex;flex-direction:column;gap:14px" id="activityForm">
+    <div class="filter-group">
+      <div class="filter-label">Program</div>
+      <select class="filter-select" id="form-program">
+        ${PROGRAMS.map(p=>`<option value="${p.id}">${p.abbr} — ${p.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Activity Name *</div>
+      <input type="text" id="form-name" class="filter-input" placeholder="e.g. Coaching Session #12" />
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Activity Type</div>
+      <select class="filter-select" id="form-type">
+        ${ACTIVITY_TYPES.map(t=>`<option>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="date-range-row">
+      <div class="filter-group">
+        <div class="filter-label">Date</div>
+        <input type="date" id="form-date" class="filter-input" value="${today}" />
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Status</div>
+        <select class="filter-select" id="form-status">
+          <option value="on-track">On Track</option>
+          <option value="caution">Caution</option>
+          <option value="behind">Behind</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Responsible Person</div>
+      <input type="text" id="form-person" class="filter-input" placeholder="Name of responsible staff" />
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Notes</div>
+      <textarea id="form-notes" class="filter-input" rows="3" placeholder="Optional notes…" style="resize:vertical"></textarea>
+    </div>
+    <div id="form-error" style="color:#ef4444;font-size:12px;display:none">Please fill in the Activity Name.</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-primary" style="align-self:flex-start" onclick="saveActivity()">✓ Save Activity</button>
+      <button class="btn btn-ghost" style="align-self:flex-start" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>`;
+}
+
+async function saveActivity() {
+  const name   = $('form-name')?.value.trim();
+  const progId = $('form-program')?.value;
+  const type   = $('form-type')?.value;
+  const date   = $('form-date')?.value;
+  const status = $('form-status')?.value;
+  const person = $('form-person')?.value.trim() || 'Unassigned';
+  const notes  = $('form-notes')?.value.trim();
+
+  if(!name) { $('form-error').style.display='block'; return; }
+
+  const prog = PROGRAMS.find(p=>p.id===progId);
+  if(!prog) return;
+
+  // Optimistic local update first
+  const localId = Date.now();
+  const record  = { id: String(localId), progId, name, type, date, status, person, notes, isNew: true };
+  loggedActivities.unshift(record);
+  prog.metrics.today  += 1;
+  prog.metrics.total  += 1;
+  prog.metrics.completion = Math.min(100, prog.metrics.completion + 1);
+  const typeIdx = ACTIVITY_TYPES.indexOf(type);
+  if(typeIdx >= 0) prog.activities_by_type[typeIdx] += 1;
+
+  // Persist to DB (non-blocking; silently falls back to local-only on failure)
+  try {
+    const res  = await fetch(`${API_BASE}/activities.php`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ program_id:progId, name, type, date, status, person, notes }),
+    });
+    const data = await res.json();
+    if (data.success && data.id) {
+      // Replace the local temp id with the real DB id
+      record.id = String(data.id);
+    }
+  } catch (_) { /* DB unavailable — local update already applied */ }
+
+  $('modalBody').innerHTML = `
+    <div style="text-align:center;padding:32px 16px">
+      <div style="font-size:36px;margin-bottom:12px">✅</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">Activity Saved</div>
+      <div style="color:var(--text-muted);font-size:13px">"${name}" added to <span style="color:${prog.color};font-weight:600">${prog.abbr}</span></div>
+    </div>`;
+  setTimeout(()=>{ closeModal(); renderAll(); }, 1200);
+}
+
+
+function closeModal(e) {
+  if(e && e.target !== $('modalOverlay')) return;
+  $('modalOverlay').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIEW ACTIVITY DETAIL
+═══════════════════════════════════════════════════════ */
+function viewActivity(rowId, progId) {
+  const prog = PROGRAMS.find(p=>p.id===progId);
+  if(!prog) return;
+
+  // Try user-logged activities first, then rebuild from seed data
+  let row = loggedActivities.find(a=>String(a.id)===rowId);
+  if(!row) {
+    // Rebuild seed rows for this program and find by id
+    const allRows = generateTableRows(prog);
+    row = allRows.find(r=>r.id===rowId);
+  }
+  if(!row) return;
+
+  const statusColors = { 'on-track':'#22c55e', 'caution':'#f59e0b', 'behind':'#ef4444' };
+  const sColor = statusColors[row.status] || 'var(--text-primary)';
+
+  $('modalTitle').innerHTML = `<span style="color:${prog.color}">${prog.icon} Activity Detail</span>`;
+  $('modalBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <div style="font-size:18px;font-weight:800;margin-bottom:6px">${row.name}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${prog.color}22;color:${prog.color};font-weight:700">${row.type}</span>
+          <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${sColor}22;color:${sColor};font-weight:700">${statusLabel(row.status)}</span>
+          ${row.isNew ? `<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:${prog.color}44;color:${prog.color};font-weight:700">Newly Logged</span>` : ''}
+        </div>
+      </div>
+
+      <div class="modal-grid">
+        <div class="modal-stat">
+          <div class="modal-stat-label">Program</div>
+          <div style="font-size:15px;font-weight:700;color:${prog.color};margin-top:4px">${prog.abbr}</div>
+          <div class="modal-stat-sub">${prog.stage}</div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-label">Date</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px">${row.date}</div>
+          <div class="modal-stat-sub">Scheduled / completed</div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-label">Responsible</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px">${row.person}</div>
+          <div class="modal-stat-sub">Program staff</div>
+        </div>
+        <div class="modal-stat">
+          <div class="modal-stat-label">Status</div>
+          <div style="font-size:15px;font-weight:700;color:${sColor};margin-top:4px">${statusLabel(row.status)}</div>
+          <div class="modal-stat-sub">Current tracking status</div>
+        </div>
+      </div>
+
+      ${row.notes ? `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Notes</div>
+        <div style="font-size:13px;color:var(--text-accent);line-height:1.6">${row.notes}</div>
+      </div>` : ''}
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="closeModal()">✓ Close</button>
+        <button class="btn btn-ghost" onclick="selectProgram('${prog.id}');closeModal()">View Full Program</button>
+      </div>
+    </div>`;
+  $('modalOverlay').classList.add('open');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════════ */
+let searchIndex = [];
+function buildSearchIndex() {
+  searchIndex = [
+    ...PROGRAMS.map(p=>({ label:`${p.icon} ${p.abbr} — ${p.name}`, action:()=>selectProgram(p.id), tag:'Program' })),
+    ...ALERTS.map(a=>({ label:`🔔 ${a.title}`, action:()=>{ scrollTo('section-alerts'); selectProgram(a.program); }, tag:'Alert' })),
+    { label:'📊 Detailed Analytics', action:()=>scrollTo('section-analytics'), tag:'Section' },
+    { label:'📅 Activity Timeline',  action:()=>scrollTo('section-timeline'),  tag:'Section' },
+    { label:'📄 Export PDF',          action:exportPDF, tag:'Action' },
+    { label:'📊 Export Excel',        action:exportExcel, tag:'Action' },
+  ];
+}
+
+$('globalSearch').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const res = $('searchResults');
+  if(!q) { res.classList.remove('open'); return; }
+  const hits = searchIndex.filter(x=>x.label.toLowerCase().includes(q)).slice(0,8);
+  if(!hits.length) { res.classList.remove('open'); return; }
+  res.innerHTML = hits.map((h,i)=>`
+    <div class="search-item" onclick="searchHit(${i})">
+      <span style="font-size:11px;padding:1px 6px;border-radius:20px;background:var(--bg-hover);color:var(--text-muted)">${h.tag}</span>
+      ${h.label}
+    </div>`).join('');
+  res.classList.add('open');
+  window._searchHits = hits;
+});
+
+function searchHit(i) {
+  window._searchHits[i]?.action();
+  $('globalSearch').value='';
+  $('searchResults').classList.remove('open');
+}
+
+document.addEventListener('click', e=>{
+  if(!$('globalSearch').contains(e.target)) $('searchResults').classList.remove('open');
+});
+
+/* ═══════════════════════════════════════════════════════
+   TABLE INTERACTIONS
+═══════════════════════════════════════════════════════ */
+function filterTable(input, tableId) {
+  const q = input.value.toLowerCase();
+  const tbl = document.getElementById(tableId);
+  if(!tbl) return;
+  const rows = tbl.querySelectorAll('tbody tr');
+  let visible = 0;
+  rows.forEach(r=>{
+    const match = r.textContent.toLowerCase().includes(q);
+    r.style.display = match ? '' : 'none';
+    if(match) visible++;
+  });
+  const countEl = document.getElementById(`count-${tableId.replace('tbl-','')}`);
+  if(countEl) countEl.textContent = `Showing ${visible} records`;
+}
+
+function sortTable(tableId, col) {
+  const tbl = document.getElementById(tableId);
+  if(!tbl) return;
+  const tbody = tbl.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  sortAsc = !sortAsc;
+  rows.sort((a,b)=>{
+    const va = a.querySelectorAll('td')[col]?.textContent.trim()??'';
+    const vb = b.querySelectorAll('td')[col]?.textContent.trim()??'';
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+function exportTableCSV(tableId, filename) {
+  const tbl = document.getElementById(tableId);
+  if(!tbl) return;
+  const rows = Array.from(tbl.querySelectorAll('tr'));
+  const csv = rows.map(r=>
+    Array.from(r.querySelectorAll('th,td'))
+      .map(c=>'"'+c.textContent.trim().replace(/"/g,'""')+'"')
+      .join(',')
+  ).join('\n');
+  downloadBlob(csv, `${filename}.csv`, 'text/csv');
+}
+
+/* ═══════════════════════════════════════════════════════
+   EXPORT
+═══════════════════════════════════════════════════════ */
+function exportPDF() {
+  // Stamp date in the print header and trigger browser print dialog
+  const d = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const el = document.getElementById('printDate');
+  if(el) el.textContent = d;
+  window.print();
+}
+function exportExcel() {
+  // Build simple CSV of portfolio data
+  const headers = ['Program','Abbr','Stage','Status','Activities Today','Total Activities','Completion %','Budget Used %'];
+  const rows = PROGRAMS.map(p=>[p.name,p.abbr,p.stage,statusLabel(p.status),p.metrics.today,p.metrics.total,p.metrics.completion,p.budget_used]);
+  const csv = [headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  downloadBlob(csv, 'MIIC_Portfolio_Export.csv', 'text/csv');
+}
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content],{type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════════════════ */
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function sortCards() {
+  PROGRAMS.sort((a,b)=>sortAsc?a.metrics.completion-b.metrics.completion:b.metrics.completion-a.metrics.completion);
+  sortAsc=!sortAsc; renderCards();
+}
+function filterCards() {
+  const s = $('statusFilter').value;
+  const grid = $('cardsGrid');
+  if(s==='all'){ renderCards(); return; }
+  const progs = PROGRAMS.filter(p=>p.status===s);
+  grid.innerHTML = progs.map(p=>`
+    <div class="prog-card fadeIn" onclick="openModal('${p.id}')">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${p.color};border-radius:12px 12px 0 0"></div>
+      <div class="card-header">
+        <div class="card-prog-id">
+          <div class="card-icon-wrap" style="background:${p.color}20">${p.icon}</div>
+          <div><div class="card-prog-name">${p.abbr}</div><div class="card-prog-stage">${p.stage}</div></div>
+        </div>
+        <div class="status-pill ${statusClass(p.status)}">
+          <div class="status-dot ${statusDotClass(p.status)}"></div>${statusLabel(p.status)}
+        </div>
+      </div>
+      <div class="card-metrics">
+        <div class="metric-item"><div class="metric-val" style="color:${p.color}">${p.metrics.today}</div><div class="metric-lbl">Today</div></div>
+        <div class="metric-item"><div class="metric-val">${fmt(p.metrics.total)}</div><div class="metric-lbl">Total</div></div>
+        <div class="metric-item"><div class="metric-val">${p.metrics.completion}%</div><div class="metric-lbl">Completion</div></div>
+      </div>
+    </div>`).join('');
+}
+function toggleFullTimeline() { /* expand/collapse handled by CSS */ }
+
+/* ═══════════════════════════════════════════════════════
+   ROLE-BASED VIEW
+═══════════════════════════════════════════════════════ */
+$('roleSelect').addEventListener('change', function() {
+  const role = this.value;
+  // Field staff: hide financial details
+  const sensitiveEls = document.querySelectorAll('.financial-sensitive');
+  sensitiveEls.forEach(el=>{ el.style.display = (role==='field') ? 'none' : ''; });
+  // In production: full RBAC via token-based auth
+});
+
+/* ═══════════════════════════════════════════════════════
+   NOTIFICATION BELL
+═══════════════════════════════════════════════════════ */
+function updateBell() {
+  const badge = $('alertBadge');
+  if (!badge) return;
+  const count = ALERTS.length;
+  badge.textContent = count > 9 ? '9+' : (count || '');
+  badge.classList.toggle('visible', count > 0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTOMATED ALERTS & AUTO-REFRESH
+═══════════════════════════════════════════════════════ */
+
+// Call auto_alerts.php to let the server scan for new alerts,
+// then refresh the local alerts list from the DB.
+async function triggerAutoAlerts() {
+  try {
+    const res  = await fetch(`${API_BASE}/auto_alerts.php`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (Array.isArray(data.alerts)) {
+      ALERTS = data.alerts.map(normalizeAlert);
+      renderAlerts();
+      updateBell();
+    }
+  } catch (_) { /* API unavailable — keep existing alerts */ }
+}
+
+// Poll for fresh alerts every 60 seconds so the dashboard
+// reflects newly created or acknowledged alerts without a page reload.
+function startAutoRefresh() {
+  setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auto_alerts.php`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.alerts)) {
+        ALERTS = data.alerts.map(normalizeAlert);
+        renderAlerts();
+        updateBell();
+      }
+    } catch (_) { /* silent fail */ }
+  }, 60_000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   REAL-TIME TICKER
+═══════════════════════════════════════════════════════ */
+function simulateLive() {
+  setInterval(()=>{
+    const p = PROGRAMS[Math.floor(Math.random()*PROGRAMS.length)];
+    const delta = Math.floor(Math.random()*3);
+    p.metrics.today += delta;
+    p.metrics.total += delta;
+    // Update only the quick stats count element, no full re-render
+    const totalToday = PROGRAMS.reduce((s,x)=>s+x.metrics.today,0);
+    const qs = $('quickStats');
+    if(qs){
+      const firstVal = qs.querySelector('.qstat-value');
+      if(firstVal) firstVal.textContent = totalToday;
+    }
+  }, 8000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FILTERS WIRING
+═══════════════════════════════════════════════════════ */
+['activityFilter','statusFilter','dateFrom','dateTo'].forEach(id=>{
+  $(id)?.addEventListener('change', ()=>renderAll());
+});
+
+/* ═══════════════════════════════════════════════════════
+   MAIN RENDER
+═══════════════════════════════════════════════════════ */
+function renderAll() {
+  buildSearchIndex();
+  renderSidebarList();
+  renderPipeline();
+  renderCards();
+  renderTimeline();
+  renderAnalytics();
+  renderAlerts();
+  renderRightSidebar();
+  updateBell();
+}
+
+// Boot — async init fetches from DB, falls back to local data
+init();
+</script>
+</body>
+</html>
