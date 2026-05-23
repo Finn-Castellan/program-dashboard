@@ -9,6 +9,15 @@ define('DB_USER',    'root');
 define('DB_PASS',    '');
 define('DB_CHARSET', 'utf8mb4');
 
+// ─────────────────────────────────────────────────────────────
+//  Admin credentials
+//  Default login: admin / miic2026!
+//  To change the password, replace ADMIN_PASS_HASH with:
+//    php -r "echo password_hash('yourNewPassword', PASSWORD_BCRYPT);"
+// ─────────────────────────────────────────────────────────────
+define('ADMIN_USER',      'admin');
+define('ADMIN_PASS_HASH', '$2y$10$2PkA8llUkgGKOurMSRZddOCI2jIUYzKATQ2nmyx91LufRS6rxg1RG');
+
 function getPDO(): PDO {
     static $pdo = null;
     if ($pdo === null) {
@@ -45,10 +54,38 @@ function setCorsHeaders(): void {
     if (preg_match('#^https?://localhost(:\d+)?$#', $origin)) {
         header('Access-Control-Allow-Origin: ' . $origin);
     }
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Credentials: true');
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(204);
         exit;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Session / auth helpers
+// ─────────────────────────────────────────────────────────────
+function startSecureSession(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'secure'   => false,   // set true when running over HTTPS
+            'httponly' => true,
+            'samesite' => 'Strict',
+        ]);
+        session_start();
+    }
+}
+
+function isAuthenticated(): bool {
+    startSecureSession();
+    return !empty($_SESSION['admin_user']);
+}
+
+function requireAuth(): void {
+    if (!isAuthenticated()) {
+        jsonError('Unauthorised', 401);
     }
 }

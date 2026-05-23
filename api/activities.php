@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 // ── POST ─────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAuth();
     $body = json_decode(file_get_contents('php://input'), true);
     if (!is_array($body)) {
         jsonError('Invalid JSON body');

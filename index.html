@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MIIC Program Activity Tracker</title>
+<title>Program Activity Tracker</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
@@ -39,7 +39,6 @@
     --shadow: 0 4px 24px rgba(0,0,0,0.4);
     --nav-h:  60px;
     --sidebar-w: 240px;
-    --rsidebar-w: 220px;
     --transition: 0.2s ease;
   }
 
@@ -73,12 +72,12 @@
   }
   .topnav-brand { display: flex; align-items: center; gap: 10px; min-width: 200px; }
   .brand-logo {
-    width: 36px; height: 36px; border-radius: 8px;
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    width: 48px; height: 48px; border-radius: 8px;
+    background: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 18px; font-weight: 800; color: #fff;
-    flex-shrink: 0;
+    flex-shrink: 0; overflow: hidden; padding: 2px;
   }
+  .brand-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .brand-title { font-size: 15px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
   .brand-sub   { font-size: 11px; color: var(--text-muted); }
 
@@ -144,6 +143,85 @@
   .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
   @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.4; } }
 
+  /* SYNC BADGE */
+  .sync-badge {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-muted); cursor: default; white-space: nowrap;
+    transition: all var(--transition);
+  }
+  .sync-badge.syncing { color: var(--blue);  border-color: rgba(59,130,246,0.4); animation: pulse 1.5s infinite; }
+  .sync-badge.synced  { color: var(--green); border-color: rgba(34,197,94,0.3); }
+
+  /* ═══════════════════════════════════════════════
+     VERSION BADGE & CHANGELOG
+  ═══════════════════════════════════════════════ */
+  .ver-wrap { position: relative; }
+  .ver-badge {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4);
+    color: var(--blue); cursor: pointer; transition: background var(--transition);
+  }
+  .ver-badge:hover { background: rgba(59,130,246,0.28); }
+  .changelog-popup {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 310px; background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 16px; z-index: 500;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+    display: none; flex-direction: column; gap: 8px;
+  }
+  .changelog-popup.open { display: flex; }
+  .cl-header { font-size: 12px; font-weight: 700; color: var(--text-accent); margin-bottom: 2px; }
+  .cl-entry { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .cl-tag { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; letter-spacing: 0.3px; }
+  .cl-new { background: rgba(34,197,94,0.15); color: var(--green); }
+  .cl-fix { background: rgba(245,158,11,0.15); color: var(--yellow); }
+
+  /* SUGGEST BUTTON */
+  .suggest-btn {
+    padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-accent); cursor: pointer; transition: background var(--transition);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .suggest-btn:hover { background: var(--bg-hover); }
+
+  /* FEEDBACK FORM */
+  .fb-label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .fb-input, .fb-textarea {
+    width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text-primary);
+    resize: vertical; box-sizing: border-box; margin-bottom: 16px; font-family: inherit;
+    transition: border-color var(--transition);
+  }
+  .fb-input:focus, .fb-textarea:focus { outline: none; border-color: var(--blue); }
+  .fb-footer { display: flex; gap: 10px; justify-content: flex-end; }
+  .fb-submit {
+    padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    background: var(--blue); border: none; color: #fff; cursor: pointer; transition: opacity 0.2s;
+  }
+  .fb-submit:hover { opacity: 0.85; }
+  .fb-cancel {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer;
+  }
+  .fb-cancel:hover { background: var(--bg-hover); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 600;
+    background: var(--bg-card); border: 1px solid var(--green);
+    border-radius: 10px; padding: 12px 18px; font-size: 13px; color: var(--text-primary);
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    transform: translateY(20px); opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
   /* ═══════════════════════════════════════════════
      LAYOUT SHELL
   ═══════════════════════════════════════════════ */
@@ -158,7 +236,8 @@
   ═══════════════════════════════════════════════ */
   .sidebar {
     width: var(--sidebar-w);
-    min-width: var(--sidebar-w);
+    min-width: 160px;
+    max-width: 420px;
     background: var(--bg-surface);
     border-right: 1px solid var(--border);
     padding: 16px 12px;
@@ -166,6 +245,41 @@
     position: sticky; top: var(--nav-h);
     height: calc(100vh - var(--nav-h));
     overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  /* Drag handle between sidebar and main */
+  .sidebar-resizer {
+    width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    flex-shrink: 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    transition: background 0.15s;
+    z-index: 10;
+  }
+  .sidebar-resizer:hover,
+  .sidebar-resizer.dragging {
+    background: var(--blue);
+  }
+  .sidebar-resizer::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 3px;
+    height: 36px;
+    border-radius: 3px;
+    background: var(--border);
+    transition: background 0.15s;
+  }
+  .sidebar-resizer:hover::after,
+  .sidebar-resizer.dragging::after {
+    background: var(--blue);
   }
 
   .sidebar-section-title {
@@ -225,6 +339,8 @@
     min-width: 0;
     display: flex; flex-direction: column; gap: 28px;
     overflow-x: hidden;
+    /* Allow main to shrink/grow as sidebar is resized */
+    width: 0;
   }
 
   .section-header {
@@ -250,6 +366,16 @@
     background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
   }
   .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .btn-ghost.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  /* quick-filter panel */
+  #quickFilterPanel { display:none; flex-wrap:wrap; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:14px; }
+  .qf-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-right:2px; }
+  .qf-btn { padding:4px 12px; font-size:12px; border-radius:20px; border:1px solid var(--border); background:var(--bg); color:var(--text-secondary); cursor:pointer; transition:all .15s; }
+  .qf-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+  .qf-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+  .qf-sep { width:1px; height:20px; background:var(--border); margin:0 4px; }
+
   .btn-primary {
     background: var(--blue); border: 1px solid transparent; color: #fff;
   }
@@ -297,12 +423,24 @@
     letter-spacing: 0.5px; text-transform: uppercase; flex-shrink: 0;
   }
   .status-dot { width: 5px; height: 5px; border-radius: 50%; }
-  .status-green  { background: rgba(34,197,94,0.15);  color: #22c55e; }
-  .status-yellow { background: rgba(245,158,11,0.15); color: #f59e0b; }
-  .status-red    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+  .status-green  { background: rgba(34,197,94,0.15);  color: #22c55e; box-shadow: 0 0 0 1px rgba(34,197,94,0.22); }
+  .status-yellow { background: rgba(245,158,11,0.18); color: #f59e0b; animation: status-glow-amber 2s ease-in-out infinite; }
+  .status-red    { background: rgba(239,68,68,0.18);  color: #ef4444; animation: status-glow-red 1.4s ease-in-out infinite; }
   .status-dot-green  { background: #22c55e; }
   .status-dot-yellow { background: #f59e0b; }
   .status-dot-red    { background: #ef4444; }
+  /* Caution & Behind: replace status-dot with emoji icon via ::before */
+  .status-yellow .status-dot, .status-red .status-dot { display: none; }
+  .status-yellow::before { content: '\26A0\FE0F'; font-size: 10px; line-height: 1; }
+  .status-red::before    { content: '\1F6A8'; font-size: 10px; line-height: 1; }
+  @keyframes status-glow-amber {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+    50%       { box-shadow: 0 0 8px 3px rgba(245,158,11,0.38); }
+  }
+  @keyframes status-glow-red {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    50%       { box-shadow: 0 0 10px 4px rgba(239,68,68,0.42); }
+  }
 
   .card-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
   .metric-item { text-align: center; }
@@ -336,7 +474,7 @@
   }
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .chart-container { position: relative; height: 280px; }
+  .chart-container { position: relative; height: 280px; transition: height .3s ease; }
 
   /* ═══ SECTION 3: ANALYTICS ═══ */
   .tabs { display: flex; gap: 2px; margin-bottom: 0; flex-wrap: wrap; }
@@ -354,6 +492,7 @@
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: 0 var(--radius) var(--radius) var(--radius);
     padding: 20px;
+    overflow: hidden;
   }
   .tab-panel.active { display: block; }
 
@@ -361,6 +500,7 @@
   .chart-card {
     background: var(--bg-surface); border: 1px solid var(--border);
     border-radius: 10px; padding: 16px;
+    min-width: 0; overflow: hidden;
   }
   .chart-card-title { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -425,65 +565,65 @@
   }
   .alert-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
 
-  /* ═══════════════════════════════════════════════
-     RIGHT SIDEBAR
-  ═══════════════════════════════════════════════ */
-  .rsidebar {
-    width: var(--rsidebar-w);
-    min-width: var(--rsidebar-w);
-    background: var(--bg-surface);
-    border-left: 1px solid var(--border);
-    padding: 16px 14px;
-    display: flex; flex-direction: column; gap: 20px;
-    position: sticky; top: var(--nav-h);
-    height: calc(100vh - var(--nav-h));
-    overflow-y: auto;
-  }
-  .rside-section-title {
-    font-size: 10px; font-weight: 700; letter-spacing: 1px;
-    color: var(--text-muted); text-transform: uppercase; padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
 
-  .quick-stats { display: flex; flex-direction: column; gap: 10px; }
-  .qstat {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; border-radius: 8px; background: var(--bg-card);
-    border: 1px solid var(--border);
+
+  /* SELECTIVE EXPORT MODAL */
+  .exp-section { margin-bottom: 20px; }
+  .exp-section-title {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
   }
-  .qstat-label { font-size: 10px; color: var(--text-muted); }
-  .qstat-value { font-size: 20px; font-weight: 800; margin-top: 1px; }
-  .qstat-delta { font-size: 10px; margin-top: 1px; }
-  .delta-up   { color: var(--green); }
-  .delta-down { color: var(--red); }
-  .qstat-icon { font-size: 22px; opacity: 0.6; }
-
-  .completion-bars { display: flex; flex-direction: column; gap: 12px; }
-  .cbar-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
-  .cbar-name { font-size: 11px; font-weight: 600; color: var(--text-accent); }
-  .cbar-pct  { font-size: 11px; font-weight: 700; }
-  .cbar-track { height: 5px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
-  .cbar-fill  { height: 100%; border-radius: 3px; }
-
-  .export-section { display: flex; flex-direction: column; gap: 8px; }
-  .export-btn {
+  .exp-prog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .exp-prog-item {
     display: flex; align-items: center; gap: 8px;
-    padding: 9px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
-    background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);
-    cursor: pointer; transition: all var(--transition);
+    padding: 7px 10px; border-radius: 8px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    cursor: pointer; transition: background var(--transition); font-size: 12px;
+    user-select: none;
   }
-  .export-btn:hover { background: var(--bg-hover); }
-  .export-btn .exp-icon { font-size: 14px; }
+  .exp-prog-item:hover { background: var(--bg-hover); }
+  .exp-prog-item input[type=checkbox] { accent-color: var(--blue); width: 14px; height: 14px; flex-shrink: 0; }
+  .exp-sel-ctrl { display: flex; gap: 10px; margin-bottom: 8px; }
+  .exp-sel-link {
+    color: var(--blue); cursor: pointer; background: none; border: none;
+    font-size: 12px; padding: 0;
+  }
+  .exp-sel-link:hover { text-decoration: underline; }
+  .exp-format-row { display: flex; gap: 10px; }
+  .exp-fmt-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px; border-radius: 10px;
+    background: var(--bg-card); border: 2px solid var(--border);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all var(--transition); color: var(--text-muted);
+  }
+  .exp-fmt-btn:hover { border-color: var(--blue); color: var(--text-primary); }
+  .exp-fmt-btn.exp-selected { border-color: var(--blue); background: rgba(59,130,246,0.12); color: var(--text-primary); }
+  .exp-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .exp-date-label { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+  .exp-date-input {
+    width: 100%; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text-primary);
+    box-sizing: border-box; transition: border-color var(--transition);
+  }
+  .exp-date-input:focus { outline: none; border-color: var(--blue); }
+  .exp-footer {
+    display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+    border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px;
+  }
+  .exp-run-btn {
+    padding: 9px 24px; border-radius: 8px; font-size: 13px; font-weight: 700;
+    background: var(--blue); border: none; color: #fff; cursor: pointer; transition: opacity 0.2s;
+  }
+  .exp-run-btn:hover { opacity: 0.85; }
+  .exp-cancel-btn {
+    padding: 9px 16px; border-radius: 8px; font-size: 13px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer;
+  }
+  .exp-cancel-btn:hover { background: var(--bg-hover); }
 
-  .top-prog-list { display: flex; flex-direction: column; gap: 8px; }
-  .top-prog-item { display: flex; align-items: center; gap: 8px; }
-  .tp-rank { font-size: 10px; color: var(--text-muted); width: 16px; text-align: right; }
-  .tp-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .tp-body { flex: 1; min-width: 0; }
-  .tp-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tp-val  { font-size: 10px; color: var(--text-muted); }
-  .tp-bar-wrap { width: 50px; }
-  .tp-bar { height: 4px; border-radius: 2px; }
+
 
   /* ═══════════════════════════════════════════════
      MODAL
@@ -536,7 +676,6 @@
      RESPONSIVE
   ═══════════════════════════════════════════════ */
   @media (max-width: 1200px) {
-    .rsidebar { display: none; }
     .analytics-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 900px) {
@@ -560,13 +699,168 @@
   .section-divider { height: 1px; background: var(--border); }
 
   /* ═══════════════════════════════════════════════
+     HIGHLIGHTS PANEL
+  ═══════════════════════════════════════════════ */
+  .highlights-panel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .highlight-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 0;
+  }
+  .highlight-card-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .highlight-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    background: var(--bg-surface); margin-bottom: 5px;
+    cursor: pointer; transition: background var(--transition);
+  }
+  .highlight-item:hover { background: var(--bg-hover); }
+  .highlight-item:last-child { margin-bottom: 0; }
+  .hi-rank { font-size: 13px; width: 20px; text-align: center; flex-shrink: 0; }
+  .hi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .hi-body { flex: 1; min-width: 0; }
+  .hi-name {
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hi-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .hi-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+  }
+  .highlights-empty {
+    text-align: center; padding: 16px 8px;
+    color: var(--text-muted); font-size: 12px;
+  }
+  @media (max-width: 1100px) { .highlights-panel { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 700px)  { .highlights-panel { grid-template-columns: 1fr; } }
+
+  /* ═══════════════════════════════════════════════
+     SPARKLINES
+  ═══════════════════════════════════════════════ */
+  .card-sparkline {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .sparkline-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 5px;
+  }
+  .sparkline-label {
+    font-size: 10px; color: var(--text-muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .sparkline-delta {
+    font-size: 10px; font-weight: 700; padding: 1px 7px;
+    border-radius: 20px; flex-shrink: 0;
+  }
+  .sparkline-delta-up   { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .sparkline-delta-down { background: rgba(239,68,68,0.15);  color: #ef4444; }
+  .sparkline-delta-flat { background: rgba(124,130,156,0.12); color: #7c829c; }
+  .sparkline-canvas-wrap { position: relative; height: 48px; }
+
+  /* ═══════════════════════════════════════════════
+     PREDICTIVE INDICATORS
+  ═══════════════════════════════════════════════ */
+  .card-prediction {
+    display: flex; align-items: center; gap: 7px;
+    margin-top: 10px; padding: 7px 10px;
+    border-radius: 8px; border: 1px solid transparent;
+    font-size: 11px; line-height: 1.3;
+  }
+  .pred-icon { font-size: 13px; flex-shrink: 0; }
+  .pred-text { flex: 1; font-weight: 600; }
+  .pred-conf {
+    font-size: 9px; font-weight: 700; padding: 1px 6px;
+    border-radius: 20px; text-transform: uppercase;
+    letter-spacing: 0.5px; flex-shrink: 0;
+  }
+  .pred-conf-high   { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .pred-conf-medium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .pred-conf-low    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+
+  /* ───────────────────────────────────────────────
+     MULTI-SELECT FILTER DROPDOWNS
+  ─────────────────────────────────────────────── */
+  .ms-wrap { position: relative; }
+  .ms-trigger {
+    width: 100%; padding: 7px 10px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text-primary); font-size: 12px; text-align: left;
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; transition: border-color var(--transition);
+  }
+  .ms-trigger:hover { border-color: var(--blue); }
+  .ms-arrow { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; }
+  .ms-panel {
+    display: none; margin-top: 3px;
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .ms-panel.open { display: block; }
+  .ms-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; font-size: 12px; color: var(--text-primary);
+    cursor: pointer; transition: background var(--transition); user-select: none;
+  }
+  .ms-item:hover { background: var(--bg-hover); }
+  .ms-item input[type="checkbox"] { width: 13px; height: 13px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
+  .ms-count {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 1px 5px; border-radius: 20px; background: var(--blue); color: #fff; margin-left: 3px;
+  }
+  .ms-footer { padding: 6px 10px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
+  .ms-btn {
+    flex: 1; padding: 5px 8px; border-radius: 6px; font-size: 11px;
+    font-weight: 600; cursor: pointer; transition: all var(--transition);
+  }
+  .ms-btn-clear { background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-muted); }
+  .ms-btn-clear:hover { color: var(--text-primary); }
+
+  /* ───────────────────────────────────────────────
+     INLINE STATUS EDITOR
+  ─────────────────────────────────────────────── */
+  .status-edit-wrap { cursor: pointer; }
+  .status-edit-wrap:hover .status-pill { filter: brightness(1.15); }
+  .status-edit-wrap .status-pill { gap: 5px; }
+  .sep-panel {
+    display: none; flex-direction: row; gap: 5px;
+    margin: -6px 0 10px; padding: 7px 0 2px;
+  }
+  .sep-panel.open { display: flex; }
+  .sep-btn {
+    flex: 1; padding: 5px 4px; border-radius: 6px; font-size: 10px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; transition: all var(--transition);
+    color: var(--text-muted); background: var(--bg-hover); text-align: center;
+    white-space: nowrap;
+  }
+  .sep-btn:hover           { color: var(--text-primary); }
+  .sep-on-track.sep-active,
+  .sep-on-track:hover  { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.35); color: var(--green); }
+  .sep-caution.sep-active,
+  .sep-caution:hover   { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.35); color: var(--yellow); }
+  .sep-behind.sep-active,
+  .sep-behind:hover    { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.35); color: var(--red); }
+
+  /* ═══════════════════════════════════════════════
      PRINT / PDF EXPORT
   ═══════════════════════════════════════════════ */
   @media print {
     @page { size: A4 portrait; margin: 18mm 14mm; }
 
     /* Hide chrome, sidebars, interactive elements */
-    .topnav, .sidebar, .rsidebar, .modal-overlay,
+    .topnav, .sidebar, .modal-overlay,
     .zoom-btns, .table-toolbar, .tab-btn, .btn,
     .alert-btn, .section-actions, .pipeline-strip,
     .quick-links, .export-section, .nav-icon-btn,
@@ -583,7 +877,8 @@
     .prog-card { border: 1px solid #ccc !important; background: #fff !important; box-shadow: none !important; break-inside: avoid; }
     .card-metric-value { color: #111 !important; }
     .card-metric-label, .card-stage, .section-title { color: #444 !important; }
-    .status-pill { border: 1px solid #ccc !important; }
+    .status-pill { border: 1px solid #ccc !important; box-shadow: none !important; animation: none !important; }
+    .status-yellow::before, .status-red::before { display: none !important; }
 
     /* Charts — give them defined print heights */
     .analytics-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
@@ -601,6 +896,9 @@
     .print-header { display: block !important; text-align: center; margin-bottom: 16px; }
     .print-header h1 { font-size: 16pt; color: #111; }
     .print-header p  { font-size: 9pt; color: #555; }
+    /* Selective export — hide non-selected program cards */
+    body.print-filter .prog-card { display: none !important; }
+    body.print-filter .prog-card.print-include { display: flex !important; }
   }
   .print-header { display: none; }
 
@@ -653,16 +951,16 @@
 
 <!-- Print-only header (hidden on screen) -->
 <div class="print-header" id="printHeader">
-  <h1>MIIC Program Activity Tracker</h1>
+  <h1>Program Activity Tracker</h1>
   <p>Makerere Innovation &amp; Incubation Centre &nbsp;|&nbsp; Generated: <span id="printDate"></span></p>
 </div>
 
 <!-- ════════════ TOP NAV ════════════ -->
 <nav class="topnav">
   <div class="topnav-brand">
-    <div class="brand-logo">M</div>
+    <div class="brand-logo"><img src="miic_Logo.png" alt="MIIC"></div>
     <div>
-      <div class="brand-title">MIIC Activity Tracker</div>
+      <div class="brand-title">Program Activity Tracker</div>
       <div class="brand-sub">Makerere Innovation &amp; Incubation Centre</div>
     </div>
   </div>
@@ -675,14 +973,28 @@
 
   <div class="topnav-right">
     <div class="live-badge"><div class="live-dot"></div>Live</div>
+    <div class="sync-badge tip" id="syncBadge" data-tip="Last full data sync">⟳ —</div>
+    <button class="nav-icon-btn tip" id="refreshBtn" data-tip="Refresh all data now" onclick="fullDataRefresh()">🔄</button>
     <select class="role-select" id="roleSelect" title="Switch view role">
       <option value="board">Board View</option>
       <option value="manager">Manager View</option>
       <option value="staff" selected>Program Staff</option>
       <option value="field">Field Staff</option>
     </select>
-    <button class="nav-icon-btn tip" data-tip="Notifications" id="bellBtn" onclick="scrollTo('section-alerts')">🔔<span class="badge" id="alertBadge"></span></button>
-    <button class="nav-icon-btn tip" data-tip="Settings" id="settingsBtn">⚙️</button>
+    <button class="nav-icon-btn tip" data-tip="Notifications" id="bellBtn" onclick="scrollToSection('section-alerts')">🔔<span class="badge" id="alertBadge"></span></button>
+    <button class="nav-icon-btn tip" data-tip="Settings" id="settingsBtn" onclick="openSettings()">⚙️</button>
+    <div class="ver-wrap">
+      <button class="ver-badge tip" data-tip="View changelog" onclick="toggleChangelog()">v2.1.0</button>
+      <div class="changelog-popup" id="changelogPopup">
+        <div class="cl-header">Recent Changes</div>
+        <div class="cl-entry"><span class="cl-tag cl-new">NEW</span> E5 — Inline status editing on each program card</div>
+        <div class="cl-entry"><span class="cl-tag cl-new">NEW</span> E4 — Multi-select phase &amp; status filters</div>
+        <div class="cl-entry"><span class="cl-tag cl-new">NEW</span> E3 — Predictive completion indicators</div>
+        <div class="cl-entry"><span class="cl-tag cl-new">NEW</span> E2 — Sparkline trend charts per card</div>
+        <div class="cl-entry"><span class="cl-tag cl-new">NEW</span> E1 — Highlights panel (top performers &amp; alerts)</div>
+      </div>
+    </div>
+    <button class="suggest-btn tip" data-tip="Send a suggestion" onclick="openFeedback()">💬 Suggest</button>
     <div class="avatar tip" data-tip="My Profile">MS</div>
   </div>
 </nav>
@@ -700,7 +1012,10 @@
     </div>
 
     <div>
-      <div class="sidebar-section-title">Filters</div>
+      <div class="sidebar-section-title" style="display:flex;justify-content:space-between;align-items:center">
+        Filters
+        <button onclick="clearAllFilters()" style="font-size:10px;font-weight:600;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;transition:color 0.2s" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-muted)'">&#x2715; Clear all</button>
+      </div>
       <div class="filter-group">
         <div class="filter-label">Date Range</div>
         <div class="date-range-row">
@@ -709,43 +1024,94 @@
         </div>
       </div>
       <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">Program Phase</div>
+        <div class="ms-wrap" id="ms-phases" data-all-label="All Phases">
+          <button class="ms-trigger" onclick="toggleMs('ms-phases')">
+            <span class="ms-trigger-text">All Phases</span><span class="ms-arrow">&#9660;</span>
+          </button>
+          <div class="ms-panel">
+            <label class="ms-item"><input type="checkbox" value="pre-incubation"    onchange="applyMs('ms-phases','phases')"> Pre-Incubation</label>
+            <label class="ms-item"><input type="checkbox" value="venture-building"  onchange="applyMs('ms-phases','phases')"> Venture Building</label>
+            <label class="ms-item"><input type="checkbox" value="cross-cutting"     onchange="applyMs('ms-phases','phases')"> Cross-Cutting</label>
+            <label class="ms-item"><input type="checkbox" value="capital-readiness" onchange="applyMs('ms-phases','phases')"> Capital Readiness</label>
+            <label class="ms-item"><input type="checkbox" value="scaling"           onchange="applyMs('ms-phases','phases')"> Scaling (GMP)</label>
+            <label class="ms-item"><input type="checkbox" value="ecosystem"         onchange="applyMs('ms-phases','phases')"> Ecosystem Plug-in</label>
+            <div class="ms-footer"><button class="ms-btn ms-btn-clear" onclick="clearMs('ms-phases','phases')">Clear</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group" style="margin-top:12px">
         <div class="filter-label">Activity Type</div>
-        <select class="filter-select" id="activityFilter">
-          <option value="all">All Activities</option>
-          <option value="workshop">Workshops</option>
-          <option value="coaching">Coaching / Mentorship</option>
-          <option value="gate">Stage Gate Review</option>
-          <option value="testing">Crowd Testing</option>
-          <option value="advisory">Advisory Clinic</option>
-          <option value="demo">Demo Day / Showcase</option>
-          <option value="investor">Investor Engagement</option>
-          <option value="pilot">Pilot / POC</option>
-        </select>
+        <div class="ms-wrap" id="ms-types" data-all-label="All Types">
+          <button class="ms-trigger" onclick="toggleMs('ms-types')">
+            <span class="ms-trigger-text">All Types</span><span class="ms-arrow">&#9660;</span>
+          </button>
+          <div class="ms-panel">
+            <label class="ms-item"><input type="checkbox" value="Workshops"     onchange="applyMs('ms-types','types')"> Workshops</label>
+            <label class="ms-item"><input type="checkbox" value="Coaching"      onchange="applyMs('ms-types','types')"> Coaching</label>
+            <label class="ms-item"><input type="checkbox" value="Gate Reviews"  onchange="applyMs('ms-types','types')"> Gate Reviews</label>
+            <label class="ms-item"><input type="checkbox" value="Testing"       onchange="applyMs('ms-types','types')"> Testing</label>
+            <label class="ms-item"><input type="checkbox" value="Advisory"      onchange="applyMs('ms-types','types')"> Advisory</label>
+            <label class="ms-item"><input type="checkbox" value="Demo Days"     onchange="applyMs('ms-types','types')"> Demo Days</label>
+            <label class="ms-item"><input type="checkbox" value="Investor Eng." onchange="applyMs('ms-types','types')"> Investor Eng.</label>
+            <label class="ms-item"><input type="checkbox" value="Pilots"        onchange="applyMs('ms-types','types')"> Pilots</label>
+            <div class="ms-footer"><button class="ms-btn ms-btn-clear" onclick="clearMs('ms-types','types')">Clear</button></div>
+          </div>
+        </div>
       </div>
       <div class="filter-group" style="margin-top:12px">
         <div class="filter-label">Status</div>
-        <select class="filter-select" id="statusFilter">
-          <option value="all">All Statuses</option>
-          <option value="on-track">On Track</option>
-          <option value="caution">Caution</option>
-          <option value="behind">Behind</option>
-        </select>
+        <div class="ms-wrap" id="ms-status" data-all-label="All Statuses">
+          <button class="ms-trigger" onclick="toggleMs('ms-status')">
+            <span class="ms-trigger-text">All Statuses</span><span class="ms-arrow">&#9660;</span>
+          </button>
+          <div class="ms-panel">
+            <label class="ms-item"><input type="checkbox" value="on-track" onchange="applyMs('ms-status','status')"> &#x2705; On Track</label>
+            <label class="ms-item"><input type="checkbox" value="caution"  onchange="applyMs('ms-status','status')"> &#x26A0;&#xFE0F; Caution</label>
+            <label class="ms-item"><input type="checkbox" value="behind"   onchange="applyMs('ms-status','status')"> &#x1F534; Behind</label>
+            <div class="ms-footer"><button class="ms-btn ms-btn-clear" onclick="clearMs('ms-status','status')">Clear</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group" style="margin-top:12px">
+        <div class="filter-label">Responsible Staff</div>
+        <div class="ms-wrap" id="ms-staff" data-all-label="All Staff">
+          <button class="ms-trigger" onclick="toggleMs('ms-staff')">
+            <span class="ms-trigger-text">All Staff</span><span class="ms-arrow">&#9660;</span>
+          </button>
+          <div class="ms-panel">
+            <label class="ms-item"><input type="checkbox" value="Sarah K."   onchange="applyMs('ms-staff','staff')"> Sarah K.</label>
+            <label class="ms-item"><input type="checkbox" value="James M."   onchange="applyMs('ms-staff','staff')"> James M.</label>
+            <label class="ms-item"><input type="checkbox" value="Anna T."    onchange="applyMs('ms-staff','staff')"> Anna T.</label>
+            <label class="ms-item"><input type="checkbox" value="David O."   onchange="applyMs('ms-staff','staff')"> David O.</label>
+            <label class="ms-item"><input type="checkbox" value="Grace N."   onchange="applyMs('ms-staff','staff')"> Grace N.</label>
+            <label class="ms-item"><input type="checkbox" value="Peter L."   onchange="applyMs('ms-staff','staff')"> Peter L.</label>
+            <label class="ms-item"><input type="checkbox" value="Faith W."   onchange="applyMs('ms-staff','staff')"> Faith W.</label>
+            <label class="ms-item"><input type="checkbox" value="Moses B."   onchange="applyMs('ms-staff','staff')"> Moses B.</label>
+            <label class="ms-item"><input type="checkbox" value="Unassigned" onchange="applyMs('ms-staff','staff')"> Unassigned</label>
+            <div class="ms-footer"><button class="ms-btn ms-btn-clear" onclick="clearMs('ms-staff','staff')">Clear</button></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div>
       <div class="sidebar-section-title">Quick Links</div>
       <div class="quick-links">
-        <button class="quick-link" onclick="exportPDF()"><span class="ql-icon">📄</span>Export PDF</button>
-        <button class="quick-link" onclick="exportExcel()"><span class="ql-icon">📊</span>Export Excel</button>
-        <button class="quick-link" onclick="scrollTo('section-alerts')"><span class="ql-icon">🔔</span>Alerts &amp; Notifications</button>
-        <button class="quick-link" onclick="scrollTo('section-analytics')"><span class="ql-icon">📈</span>Detailed Analytics</button>
-        <button class="quick-link" onclick="scrollTo('section-timeline')"><span class="ql-icon">🗓️</span>Activity Timeline</button>
-        <button class="quick-link"><span class="ql-icon">📁</span>Reports Archive</button>
-        <button class="quick-link"><span class="ql-icon">⚙️</span>Settings</button>
+        <button class="quick-link" onclick="openExportModal()"><span class="ql-icon">📄</span>Export PDF</button>
+        <button class="quick-link" onclick="openExportModal()"><span class="ql-icon">📊</span>Export Excel</button>
+        <button class="quick-link" onclick="scrollToSection('section-alerts')"><span class="ql-icon">🔔</span>Alerts &amp; Notifications</button>
+        <button class="quick-link" onclick="scrollToSection('section-analytics')"><span class="ql-icon">📈</span>Detailed Analytics</button>
+        <button class="quick-link" onclick="scrollToSection('section-timeline')"><span class="ql-icon">🗓️</span>Activity Timeline</button>
+        <button class="quick-link" onclick="openReportsArchive()"><span class="ql-icon">📁</span>Reports Archive</button>
+        <button class="quick-link" onclick="openSettings()"><span class="ql-icon">⚙️</span>Settings</button>
+        <button class="quick-link" onclick="shareDashboard()"><span class="ql-icon">🔗</span>Share Dashboard</button>
       </div>
     </div>
   </aside>
+
+  <!-- Sidebar resize handle -->
+  <div class="sidebar-resizer" id="sidebarResizer" title="Drag to resize sidebar"></div>
 
   <!-- ════ MAIN ════ -->
   <main class="main">
@@ -756,14 +1122,45 @@
       <div class="pipeline-strip" id="pipelineStrip"></div>
     </div>
 
+    <!-- HIGHLIGHTS PANEL -->
+    <section id="section-highlights">
+      <div class="section-header">
+        <div class="section-title"><span class="icon">⚡</span> Highlights <span class="section-badge" id="highlightsBadge">Portfolio Snapshot</span></div>
+        <div class="section-actions">
+          <span id="highlightsRefreshTime" style="font-size:11px;color:var(--text-muted)"></span>
+          <button class="btn btn-ghost" onclick="renderHighlights()" title="Refresh highlights">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="highlights-panel" id="highlightsPanel"></div>
+    </section>
+
     <!-- SECTION 1: OVERVIEW -->
     <section id="section-overview">
       <div class="section-header">
         <div class="section-title"><span class="icon">🎯</span> Program Overview <span class="section-badge" id="cardCount">8 Programs</span></div>
         <div class="section-actions">
-          <button class="btn btn-ghost" onclick="sortCards()">⇅ Sort</button>
-          <button class="btn btn-ghost" onclick="filterCards()">⚡ Filter</button>
+          <button class="btn btn-ghost" id="sortBtn" onclick="sortCards()">⇅ Sort</button>
+          <button class="btn btn-ghost" id="filterBtn" onclick="filterCards()">⚡ Filter</button>
           <button class="btn btn-primary" onclick="openModal(null)">+ New Activity</button>
+        </div>
+      </div>
+      <div id="quickFilterPanel">
+        <span class="qf-label">Status:</span>
+        <button class="qf-btn active" data-group="status" onclick="qfStatus('',this)">All</button>
+        <button class="qf-btn" data-group="status" onclick="qfStatus('on-track',this)">✅ On Track</button>
+        <button class="qf-btn" data-group="status" onclick="qfStatus('caution',this)">⚠️ Caution</button>
+        <button class="qf-btn" data-group="status" onclick="qfStatus('behind',this)">🔴 Behind</button>
+        <div class="qf-sep"></div>
+        <span class="qf-label">Phase:</span>
+        <button class="qf-btn active" data-group="phase" onclick="qfPhase('',this)">All</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('pre-incubation',this)">Pre-Incubation</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('venture-building',this)">Venture Building</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('cross-cutting',this)">Cross-Cutting</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('capital-readiness',this)">Capital Readiness</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('scaling',this)">Scaling</button>
+        <button class="qf-btn" data-group="phase" onclick="qfPhase('ecosystem',this)">Ecosystem</button>
+        <div style="margin-left:auto">
+          <button class="btn btn-ghost" style="font-size:12px;padding:4px 10px" onclick="clearQuickFilters()">✕ Clear All</button>
         </div>
       </div>
       <div class="cards-grid" id="cardsGrid"></div>
@@ -818,32 +1215,7 @@
 
   </main>
 
-  <!-- ════ RIGHT SIDEBAR ════ -->
-  <aside class="rsidebar">
-    <div>
-      <div class="rside-section-title">Today's Quick Stats</div>
-      <div class="quick-stats" id="quickStats"></div>
-    </div>
 
-    <div>
-      <div class="rside-section-title">Top Performing Programs</div>
-      <div class="top-prog-list" id="topProgList"></div>
-    </div>
-
-    <div>
-      <div class="rside-section-title">Portfolio Completion</div>
-      <div class="completion-bars" id="completionBars"></div>
-    </div>
-
-    <div>
-      <div class="rside-section-title">Export &amp; Share</div>
-      <div class="export-section">
-        <button class="export-btn" onclick="exportPDF()"><span class="exp-icon">📄</span>Export as PDF</button>
-        <button class="export-btn" onclick="exportExcel()"><span class="exp-icon">📊</span>Export to Excel</button>
-        <button class="export-btn"><span class="exp-icon">🔗</span>Share Dashboard</button>
-      </div>
-    </div>
-  </aside>
 
 </div><!-- /shell -->
 
@@ -855,6 +1227,75 @@
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="modal-overlay" id="feedbackOverlay" onclick="closeFeedbackOuter(event)">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">💬 Suggest an Improvement</div>
+      <button class="modal-close" onclick="closeFeedback()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fb-form">
+        <label class="fb-label">Your name <span style="opacity:0.6">(optional)</span></label>
+        <input class="fb-input" id="fbName" placeholder="e.g. Aisha Nakato" />
+        <label class="fb-label">Suggestion</label>
+        <textarea class="fb-textarea" id="fbText" placeholder="Describe your idea or improvement…" rows="5"></textarea>
+        <div class="fb-footer">
+          <button class="fb-cancel" onclick="closeFeedback()">Cancel</button>
+          <button class="fb-submit" onclick="submitFeedback()">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportOverlay" onclick="closeExportModal(event)">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <div class="modal-title">📤 Export Dashboard Data</div>
+      <button class="modal-close" onclick="closeExportModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="exp-section">
+        <div class="exp-section-title">Programs to Include</div>
+        <div class="exp-sel-ctrl">
+          <button class="exp-sel-link" onclick="_expSelectAll(true)">Select all</button>
+          <span style="color:var(--text-muted)">&#183;</span>
+          <button class="exp-sel-link" onclick="_expSelectAll(false)">Clear all</button>
+        </div>
+        <div class="exp-prog-grid" id="expProgGrid">
+          <!-- populated by openExportModal() -->
+        </div>
+      </div>
+      <div class="exp-section">
+        <div class="exp-section-title">Export Format</div>
+        <div class="exp-format-row">
+          <button class="exp-fmt-btn" id="expFmtCsv" onclick="setExpFmt('csv')">&#x1F4CA; CSV / Excel</button>
+          <button class="exp-fmt-btn" id="expFmtPdf" onclick="setExpFmt('pdf')">&#x1F4C4; PDF (Print)</button>
+        </div>
+      </div>
+      <div class="exp-section" id="expDateSection">
+        <div class="exp-section-title">Date Range <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional &#8212; filters activity rows in CSV)</span></div>
+        <div class="exp-date-row">
+          <div>
+            <div class="exp-date-label">From</div>
+            <input type="date" class="exp-date-input" id="expDateFrom" />
+          </div>
+          <div>
+            <div class="exp-date-label">To</div>
+            <input type="date" class="exp-date-input" id="expDateTo" />
+          </div>
+        </div>
+      </div>
+      <div class="exp-footer">
+        <button class="exp-cancel-btn" onclick="closeExportModal()">Cancel</button>
+        <button class="exp-run-btn" onclick="runExport()">Export</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1038,14 +1479,31 @@ const API_BASE = 'api';
 
 // Live data arrays — populated by init() from the DB.
 // Fall back to FALLBACK_* constants if the API is unreachable.
-let PROGRAMS = [];
-let ALERTS   = [];
+let PROGRAMS     = [];
+let ALERTS       = [];
+let lastSyncTime = null;
 
 /* ═══════════════════════════════════════════════════════
    HELPERS — security & normalisation
 ═══════════════════════════════════════════════════════ */
 function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// When the DB JSON columns (trend_json, type_counts_json, distribution_json)
+// are NULL or empty — e.g. after a fresh DB import without seed data — the API
+// returns empty arrays. Fill those gaps from FALLBACK_PROGRAMS so charts always render.
+function mergeChartFallbacks(apiPrograms) {
+  return apiPrograms.map(p => {
+    const fb = FALLBACK_PROGRAMS.find(f => f.id === p.id);
+    if (!fb) return p;
+    return {
+      ...p,
+      trend:              (Array.isArray(p.trend)              && p.trend.length)              ? p.trend              : fb.trend,
+      activities_by_type: (Array.isArray(p.activities_by_type) && p.activities_by_type.length) ? p.activities_by_type : fb.activities_by_type,
+      distribution:       (Array.isArray(p.distribution)       && p.distribution.length)       ? p.distribution       : fb.distribution,
+    };
+  });
 }
 
 // Normalise alert objects from both DB format (program_id, description)
@@ -1074,7 +1532,7 @@ async function init() {
     ]);
     if (!progsRes.ok || !alertsRes.ok) throw new Error('API error');
 
-    PROGRAMS = await progsRes.json();
+    PROGRAMS = mergeChartFallbacks(await progsRes.json());
     ALERTS   = (await alertsRes.json()).map(normalizeAlert);
 
     // Merge DB-persisted logged activities into loggedActivities store
@@ -1084,6 +1542,7 @@ async function init() {
         loggedActivities.push(a);
       }
     });
+    lastSyncTime = Date.now(); // mark successful API load time
   } catch (_) {
     // API unavailable — use hardcoded fallback data
     PROGRAMS = FALLBACK_PROGRAMS.map(p => JSON.parse(JSON.stringify(p)));
@@ -1092,9 +1551,63 @@ async function init() {
   document.body.style.opacity = '';
   activeTabId = PROGRAMS[0]?.id || 'GIP';
   renderAll();
+  updateSyncBadge();
   simulateLive();
   triggerAutoAlerts();
   startAutoRefresh();
+  initSidebarResizer();
+}
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR DRAG-TO-RESIZE
+═══════════════════════════════════════════════════════ */
+function initSidebarResizer() {
+  const handle  = document.getElementById('sidebarResizer');
+  const sidebar = document.querySelector('.sidebar');
+  if (!handle || !sidebar) return;
+
+  const STORAGE_KEY = 'dashboardSidebarW';
+  const MIN_W = 160, MAX_W = 420;
+
+  // Restore saved width
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+  if (saved && saved >= MIN_W && saved <= MAX_W) {
+    sidebar.style.width = saved + 'px';
+  }
+
+  let dragging = false, startX = 0, startW = 0;
+
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    dragging = true;
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const newW  = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
+    sidebar.style.width = newW + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem(STORAGE_KEY, sidebar.offsetWidth);
+  });
+
+  // Double-click resets to default width
+  handle.addEventListener('dblclick', () => {
+    sidebar.style.width = '240px';
+    localStorage.setItem(STORAGE_KEY, 240);
+  });
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1113,6 +1626,202 @@ let sortAsc = true;
 let activeTabId = 'GIP';
 let timelineChart = null;
 let analyticsCharts = {};
+let sparklineCharts = {};
+
+/* ═══════════════════════════════════════════════════════
+   FILTER STATE & MULTI-SELECT HELPERS
+═══════════════════════════════════════════════════════ */
+const FILTER_STATE = { phases: [], types: [], status: [], staff: [] };
+
+const PHASE_MAP = {
+  'pre-incubation':    ['GIP', 'TES'],
+  'venture-building':  ['VBP'],
+  'cross-cutting':     ['PCTP', 'SAP'],
+  'capital-readiness': ['IRP'],
+  'scaling':           ['GMP'],
+  'ecosystem':         ['IDIA'],
+};
+
+function getFilteredPrograms() {
+  let progs = activeProgram === 'all' ? PROGRAMS : PROGRAMS.filter(p => p.id === activeProgram);
+  if (FILTER_STATE.phases.length) {
+    const allowed = FILTER_STATE.phases.flatMap(ph => PHASE_MAP[ph] || []);
+    progs = progs.filter(p => allowed.includes(p.id));
+  }
+  if (FILTER_STATE.status.length) {
+    progs = progs.filter(p => FILTER_STATE.status.includes(p.status));
+  }
+  return progs;
+}
+
+function toggleMs(id) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  const panel = wrap.querySelector('.ms-panel');
+  const isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+  if (!isOpen) panel.classList.add('open');
+}
+
+function _getMsVals(id) {
+  const wrap = document.getElementById(id);
+  return wrap ? Array.from(wrap.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value) : [];
+}
+
+function updateMsTrigger(id) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  const sel = _getMsVals(id);
+  const el  = wrap.querySelector('.ms-trigger-text');
+  if (!el) return;
+  el.innerHTML = sel.length
+    ? sel.length + ' selected&nbsp;<span class="ms-count">' + sel.length + '</span>'
+    : (wrap.getAttribute('data-all-label') || 'All');
+}
+
+function clearMs(id, key) {
+  const wrap = document.getElementById(id);
+  if (wrap) wrap.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = false; });
+  if (key) FILTER_STATE[key] = [];
+  updateMsTrigger(id);
+  applyAllFilters();
+}
+
+function applyMs(id, key) {
+  if (key) FILTER_STATE[key] = _getMsVals(id);
+  updateMsTrigger(id);
+  applyAllFilters();
+}
+
+function clearAllFilters() {
+  FILTER_STATE.phases = FILTER_STATE.types = FILTER_STATE.status = FILTER_STATE.staff = [];
+  ['ms-phases', 'ms-types', 'ms-status', 'ms-staff'].forEach(id => {
+    const w = document.getElementById(id);
+    if (w) { w.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = false; }); updateMsTrigger(id); }
+  });
+  applyAllFilters();
+}
+
+function applyAllFilters() { renderAll(); }
+
+/* ═══════════════════════════════════════════════════════
+   INLINE STATUS EDITOR
+═══════════════════════════════════════════════════════ */
+function activeSepBtn(pStatus, target) {
+  return pStatus === target ? ' sep-active' : '';
+}
+
+function statusWrapAttrs(id) {
+  const r = document.getElementById('roleSelect')?.value || 'staff';
+  return r === 'manager'
+    ? `onclick="openStatusEdit(event,'${id}')" title="Click to change status" style="cursor:pointer"`
+    : 'style="cursor:default"';
+}
+
+function openStatusEdit(evt, id) {
+  evt.stopPropagation();
+  if ((document.getElementById('roleSelect')?.value || 'staff') !== 'manager') return;
+  const target = document.getElementById('sep-' + id);
+  if (!target) return;
+  const isOpen = target.classList.contains('open');
+  document.querySelectorAll('.sep-panel.open').forEach(p => p.classList.remove('open'));
+  if (!isOpen) target.classList.add('open');
+}
+
+function setStatus(id, newStatus, evt) {
+  if (evt) evt.stopPropagation();
+  if ((document.getElementById('roleSelect')?.value || 'staff') !== 'manager') return;
+  const prog = PROGRAMS.find(p => p.id === id);
+  if (!prog || prog.status === newStatus) {
+    document.getElementById('sep-' + id)?.classList.remove('open');
+    return;
+  }
+  // Optimistic local update
+  prog.status = newStatus;
+  renderAll();
+  // Async PATCH to API
+  fetch(API_BASE + '/programs.php', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: id, status: newStatus }),
+  }).catch(() => { /* silent fail — local state already updated */ });
+}
+
+/* ═══════════════════════════════════════════════════════
+   HIGHLIGHTS PANEL
+═══════════════════════════════════════════════════════ */
+function renderHighlights() {
+  const panel = $('highlightsPanel');
+  if (!panel) return;
+
+  const progs = getFilteredPrograms();
+
+  // Top performers by completion %
+  const topPerformers = [...progs]
+    .sort((a, b) => computeCompletion(b) - computeCompletion(a))
+    .slice(0, 3);
+
+  // Overdue alerts relevant to current program filter
+  const relevantAlerts = activeProgram === 'all'
+    ? ALERTS
+    : ALERTS.filter(a => a.program === activeProgram);
+  const overdueAlerts   = relevantAlerts.filter(a => a.type === 'overdue').slice(0, 3);
+  const deadlineAlerts  = relevantAlerts.filter(a => a.type === 'deadline').slice(0, 3);
+
+  const medalIcons = ['🥇', '🥈', '🥉'];
+
+  const topHtml = topPerformers.length
+    ? topPerformers.map((p, i) => `
+      <div class="highlight-item" onclick="selectProgram('${p.id}')">
+        <div class="hi-rank">${medalIcons[i] || (i + 1)}</div>
+        <div class="hi-dot" style="background:${p.color}"></div>
+        <div class="hi-body">
+          <div class="hi-name">${escHtml(p.abbr)}</div>
+          <div class="hi-sub">${fmt(p.metrics.total)} activities &nbsp;·&nbsp; budget ${p.budget_used}%</div>
+        </div>
+        <div class="hi-badge" style="background:${p.color}22;color:${p.color}">${computeCompletion(p)}%</div>
+      </div>`).join('')
+    : `<div class="highlights-empty">No program data</div>`;
+
+  const overdueHtml = overdueAlerts.length
+    ? overdueAlerts.map(a => `
+      <div class="highlight-item" onclick="scrollToSection('section-alerts')">
+        <div class="hi-body">
+          <div class="hi-name">${escHtml(a.title)}</div>
+          <div class="hi-sub">${escHtml(a.time)}&nbsp;·&nbsp;${escHtml(a.program || a.tag)}</div>
+        </div>
+        <div class="hi-badge" style="background:rgba(239,68,68,0.15);color:#ef4444">Overdue</div>
+      </div>`).join('')
+    : `<div class="highlights-empty">✅ No overdue tasks</div>`;
+
+  const deadlineHtml = deadlineAlerts.length
+    ? deadlineAlerts.map(a => `
+      <div class="highlight-item" onclick="scrollToSection('section-alerts')">
+        <div class="hi-body">
+          <div class="hi-name">${escHtml(a.title)}</div>
+          <div class="hi-sub">${escHtml(a.time)}&nbsp;·&nbsp;${escHtml(a.program || a.tag)}</div>
+        </div>
+        <div class="hi-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b">Due Soon</div>
+      </div>`).join('')
+    : `<div class="highlights-empty">📅 No urgent deadlines</div>`;
+
+  panel.innerHTML = `
+    <div class="highlight-card">
+      <div class="highlight-card-title">🏆&nbsp; Top Performing Programs</div>
+      ${topHtml}
+    </div>
+    <div class="highlight-card" style="border-left:3px solid rgba(239,68,68,0.4)">
+      <div class="highlight-card-title" style="color:#ef4444">🚨&nbsp; Overdue Tasks</div>
+      ${overdueHtml}
+    </div>
+    <div class="highlight-card" style="border-left:3px solid rgba(245,158,11,0.4)">
+      <div class="highlight-card-title" style="color:#f59e0b">⏰&nbsp; Upcoming Deadlines</div>
+      ${deadlineHtml}
+    </div>`;
+
+  const ts = $('highlightsRefreshTime');
+  if (ts) ts.textContent = `Updated ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+}
 
 /* ═══════════════════════════════════════════════════════
    RENDER PROGRAM LIST (SIDEBAR)
@@ -1154,11 +1863,73 @@ function renderPipeline() {
 }
 
 /* ═══════════════════════════════════════════════════════
+   PREDICTIVE INDICATORS — HELPERS
+═══════════════════════════════════════════════════════ */
+function computePrediction(p) {
+  const trend      = p.trend || [];
+  if (trend.length < 4) return null;
+  const completion = computeCompletion(p);
+
+  // Ordinary least-squares regression on the 12-month trend array
+  const n = trend.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < n; i++) {
+    sumX  += i;           sumY  += trend[i];
+    sumXY += i * trend[i]; sumX2 += i * i;
+  }
+  const slope     = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const meanTrend = sumY / n;
+
+  if (completion >= 90) {
+    return { text: 'On target — above 90%', color: '#22c55e', confidence: 'high' };
+  }
+  if (slope <= 0) {
+    return { text: 'Trend stalling — review needed', color: '#ef4444', confidence: 'low' };
+  }
+
+  // Normalised slope → monthly completion gain estimate
+  const slopeRatio   = slope / Math.max(meanTrend, 0.1);
+  const monthlyGain  = Math.max(0.5, Math.min(slopeRatio * completion * 0.18, 7));
+  const monthsNeeded = Math.ceil((90 - completion) / monthlyGain);
+
+  if (monthsNeeded > 18) {
+    return { text: 'Pace insufficient for 90% within 18 mo', color: '#ef4444', confidence: 'low' };
+  }
+
+  // Project calendar date from today (May 21, 2026)
+  const base = new Date(2026, 4, 21);
+  base.setMonth(base.getMonth() + monthsNeeded);
+  const MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const projDate = MO[base.getMonth()] + ' ' + base.getFullYear();
+
+  // Confidence: are the last 4 data points monotonically rising?
+  const last4      = trend.slice(-4);
+  const isMonotone = last4.every((v, i) => i === 0 || v >= last4[i - 1]);
+  const confidence = isMonotone ? 'high' : slopeRatio > 0.04 ? 'medium' : 'low';
+  const colorMap   = { high: '#22c55e', medium: '#f59e0b', low: '#ef4444' };
+
+  return { text: 'Proj. 90% by ' + projDate, projDate, monthsNeeded, confidence,
+           color: colorMap[confidence] };
+}
+
+function predictionBadge(p) {
+  const pred = computePrediction(p);
+  if (!pred) return '';
+  const icons = { high: '📈', medium: '📊', low: '⚠️' };
+  const icon  = icons[pred.confidence] || '📊';
+  return '<div class="card-prediction" style="border-color:' + pred.color + '50;background:' + pred.color + '0a">'
+    + '<span class="pred-icon">' + icon + '</span>'
+    + '<span class="pred-text" style="color:' + pred.color + '">' + escHtml(pred.text) + '</span>'
+    + '<span class="pred-conf pred-conf-' + pred.confidence + '">' + pred.confidence + '</span>'
+    + '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════
    RENDER PROGRAM CARDS
 ═══════════════════════════════════════════════════════ */
 function renderCards() {
   const grid = $('cardsGrid');
-  const progs = activeProgram === 'all' ? PROGRAMS : PROGRAMS.filter(p => p.id === activeProgram);
+  const progs = getFilteredPrograms();
   $('cardCount').textContent = `${progs.length} Program${progs.length!==1?'s':''}`;
 
   grid.innerHTML = progs.map(p => `
@@ -1172,38 +1943,536 @@ function renderCards() {
             <div class="card-prog-stage">${p.stage}</div>
           </div>
         </div>
-        <div class="status-pill ${statusClass(p.status)}">
-          <div class="status-dot ${statusDotClass(p.status)}"></div>
-          ${statusLabel(p.status)}
+        <div class="status-edit-wrap" ${statusWrapAttrs(p.id)}>
+          <div class="status-pill ${statusClass(p.status)}">
+            <div class="status-dot ${statusDotClass(p.status)}"></div>
+            ${statusLabel(p.status)}
+          </div>
         </div>
+      </div>
+      <div class="sep-panel" id="sep-${p.id}">
+        <button class="sep-btn sep-on-track${activeSepBtn(p.status,'on-track')}" onclick="setStatus('${p.id}','on-track',event)">&#x2705; On Track</button>
+        <button class="sep-btn sep-caution${activeSepBtn(p.status,'caution')}"   onclick="setStatus('${p.id}','caution',event)">&#x26A0;&#xFE0F; Caution</button>
+        <button class="sep-btn sep-behind${activeSepBtn(p.status,'behind')}"     onclick="setStatus('${p.id}','behind',event)">&#x1F534; Behind</button>
       </div>
 
       <div class="card-metrics">
         <div class="metric-item">
           <div class="metric-val" style="color:${p.color}">${p.metrics.today}</div>
-          <div class="metric-lbl">Today</div>
+          <div class="metric-lbl tip" data-tip="Activities logged today for this program">Today</div>
         </div>
         <div class="metric-item">
           <div class="metric-val">${fmt(p.metrics.total)}</div>
-          <div class="metric-lbl">Total Activities</div>
+          <div class="metric-lbl tip" data-tip="Cumulative activities logged across all periods">Total Activities</div>
         </div>
         <div class="metric-item">
-          <div class="metric-val">${p.metrics.completion}%</div>
-          <div class="metric-lbl">Completion</div>
+          <div class="metric-val">${computeCompletion(p)}%</div>
+          <div class="metric-lbl tip" data-tip="Calculated from stored completion % and key KPI ratios (enrolled/target, graduation rate, etc.)">Completion</div>
         </div>
       </div>
 
       <div class="card-progress">
         <div class="progress-row">
           <span class="progress-lbl">Overall Completion</span>
-          <span class="progress-pct" style="color:${p.color}">${p.metrics.completion}%</span>
+          <span class="progress-pct" style="color:${p.color}">${computeCompletion(p)}%</span>
         </div>
         <div class="progress-bar-wrap">
-          <div class="progress-bar" style="width:${p.metrics.completion}%;background:${p.color}"></div>
+          <div class="progress-bar" style="width:${computeCompletion(p)}%;background:${p.color}"></div>
         </div>
       </div>
+      <div class="card-sparkline">
+        <div class="sparkline-header">
+          <span class="sparkline-label">Activity Trend</span>
+          <span class="sparkline-delta" id="spark-delta-${p.id}"></span>
+        </div>
+        <div class="sparkline-canvas-wrap">
+          <canvas id="spark-${p.id}"></canvas>
+        </div>
+      </div>
+      ${predictionBadge(p)}
     </div>
   `).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SPARKLINES
+═══════════════════════════════════════════════════════ */
+function renderSparklines() {
+  Object.values(sparklineCharts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  sparklineCharts = {};
+
+  const progs = getFilteredPrograms();
+
+  progs.forEach(p => {
+    const canvas = document.getElementById(`spark-${p.id}`);
+    if (!canvas) return;
+    const trend = p.trend || [];
+    if (!trend.length) return;
+
+    // 4-period rolling delta (last value vs 4 points back)
+    const last = trend[trend.length - 1] || 0;
+    const prev = trend[Math.max(0, trend.length - 5)] || trend[0] || 0;
+    const deltaEl = document.getElementById(`spark-delta-${p.id}`);
+    if (deltaEl) {
+      if (prev === 0) {
+        deltaEl.textContent = '—';
+        deltaEl.className = 'sparkline-delta sparkline-delta-flat';
+      } else {
+        const pct = Math.round((last - prev) / prev * 100);
+        deltaEl.textContent = pct >= 0 ? `↑ ${pct}%` : `↓ ${Math.abs(pct)}%`;
+        deltaEl.className = `sparkline-delta ${pct >= 0 ? 'sparkline-delta-up' : 'sparkline-delta-down'}`;
+      }
+    }
+
+    if (typeof Chart !== 'undefined') {
+      sparklineCharts[`spark-${p.id}`] = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: trend.map((_, i) => i),
+          datasets: [{
+            data: trend,
+            borderColor: p.color,
+            backgroundColor: p.color + '25',
+            borderWidth: 1.8,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            tension: 0.45,
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 500 },
+          plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } },
+          scales: { x: { display: false }, y: { display: false, beginAtZero: true } }
+        }
+      });
+    } else {
+      // Canvas fallback — no Chart.js
+      const ctx2 = canvas.getContext('2d');
+      const dpr  = window.devicePixelRatio || 1;
+      const W    = canvas.parentElement ? canvas.parentElement.clientWidth : 160;
+      const H    = 60;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx2.scale(dpr, dpr);
+      if (trend.length > 1) {
+        const maxV = Math.max(...trend, 1);
+        const xS = (W - 2) / (trend.length - 1);
+        const pts = trend.map((v, i) => ({ x: 1 + i * xS, y: H - 3 - (v / maxV) * (H - 6) }));
+        ctx2.beginPath();
+        pts.forEach((pt, i) => i === 0 ? ctx2.moveTo(pt.x, pt.y) : ctx2.lineTo(pt.x, pt.y));
+        ctx2.lineTo(W - 1, H); ctx2.lineTo(1, H); ctx2.closePath();
+        ctx2.fillStyle = p.color + '25'; ctx2.fill();
+        ctx2.beginPath();
+        pts.forEach((pt, i) => i === 0 ? ctx2.moveTo(pt.x, pt.y) : ctx2.lineTo(pt.x, pt.y));
+        ctx2.strokeStyle = p.color; ctx2.lineWidth = 1.8; ctx2.lineJoin = 'round'; ctx2.stroke();
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   MINI LINE CHART — self-contained canvas renderer
+   No CDN required; used for the Activity Timeline
+═══════════════════════════════════════════════════════ */
+class MiniLineChart {
+  constructor(canvas, { labels, datasets, yLabel = 'Activities', zoomLabel = '' }) {
+    this.canvas = canvas; this.labels = labels; this.datasets = datasets;
+    this.yLabel = yLabel; this.zoomLabel = zoomLabel; this._tipIdx = -1;
+    this._hov = this._onHover.bind(this);
+    this._lev = this._onLeave.bind(this);
+    canvas.addEventListener('mousemove', this._hov);
+    canvas.addEventListener('mouseleave', this._lev);
+    this._render();
+  }
+  _layout() {
+    const dpr = window.devicePixelRatio || 1;
+    const el = this.canvas.parentElement;
+    const W = el ? el.clientWidth  : 600;
+    const H = el ? el.clientHeight : 280;
+    this.canvas.width  = W * dpr;
+    this.canvas.height = H * dpr;
+    this.canvas.style.width  = W + 'px';
+    this.canvas.style.height = H + 'px';
+    this.canvas.getContext('2d').scale(dpr, dpr);
+    this.W = W; this.H = H;
+    this.pad = { top: 20, right: 24, bottom: 40, left: 50 };
+    this.cW = W - this.pad.left - this.pad.right;
+    this.cH = H - this.pad.top  - this.pad.bottom;
+  }
+  _yMax() {
+    const vals = this.datasets.flatMap(d => d.data || []).filter(isFinite);
+    const raw = Math.max(...vals, 1);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return Math.max(Math.ceil(raw / mag) * mag, 10);
+  }
+  _pts(data) {
+    const { pad, cW, cH, labels } = this;
+    const yMax = this._yMax();
+    const xS = labels.length > 1 ? cW / (labels.length - 1) : 0;
+    return data.map((v, i) => ({
+      x: pad.left + i * xS,
+      y: pad.top + cH - Math.min(v / yMax, 1) * cH
+    }));
+  }
+  _bezier(ctx, pts) {
+    if (!pts.length) return;
+    ctx.moveTo(pts[0].x, pts[0].y);
+    const T = 0.4;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(i-1,0)], p1 = pts[i],
+            p2 = pts[i+1], p3 = pts[Math.min(i+2,pts.length-1)];
+      ctx.bezierCurveTo(
+        p1.x+(p2.x-p0.x)*T/2, p1.y+(p2.y-p0.y)*T/2,
+        p2.x-(p3.x-p1.x)*T/2, p2.y-(p3.y-p1.y)*T/2,
+        p2.x, p2.y);
+    }
+  }
+  _rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+    ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+    ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+    ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+    ctx.closePath();
+  }
+  _render() {
+    this._layout();
+    const ctx = this.canvas.getContext('2d');
+    const { W, H, pad, cW, cH, labels, datasets } = this;
+    const yMax = this._yMax(), nT = 5, yS = yMax / nT;
+    const xS = labels.length > 1 ? cW / (labels.length - 1) : 0;
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = '11px system-ui,sans-serif';
+    for (let i = 0; i <= nT; i++) {
+      const v = Math.round(yS * i), y = pad.top + cH - (v / yMax) * cH;
+      ctx.strokeStyle = 'rgba(45,50,80,0.6)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cW, y); ctx.stroke();
+      ctx.fillStyle = '#7c829c'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(v, pad.left - 6, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    labels.forEach((lbl, i) => {
+      const x = pad.left + i * xS;
+      ctx.strokeStyle = 'rgba(45,50,80,0.3)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top+cH); ctx.stroke();
+      ctx.fillStyle = '#7c829c'; ctx.fillText(lbl, x, pad.top+cH+8);
+    });
+    ctx.save(); ctx.translate(12, pad.top+cH/2); ctx.rotate(-Math.PI/2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#7c829c';
+    ctx.fillText(this.yLabel, 0, 0); ctx.restore();
+    datasets.forEach(ds => {
+      if (!ds.data?.length) return;
+      const pts = this._pts(ds.data);
+      ctx.beginPath(); this._bezier(ctx, pts);
+      ctx.lineTo(pts[pts.length-1].x, pad.top+cH); ctx.lineTo(pts[0].x, pad.top+cH); ctx.closePath();
+      ctx.fillStyle = ds.backgroundColor || (ds.borderColor + '20'); ctx.fill();
+      ctx.beginPath(); this._bezier(ctx, pts);
+      ctx.strokeStyle = ds.borderColor || '#fff'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+      pts.forEach(pt => {
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, Math.PI*2);
+        ctx.fillStyle = ds.borderColor || '#fff'; ctx.fill();
+        ctx.strokeStyle = '#1a1d27'; ctx.lineWidth = 1.5; ctx.stroke();
+      });
+    });
+    if (this._tipIdx >= 0 && this._tipIdx < labels.length) {
+      const x = pad.left + this._tipIdx * xS;
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
+      ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(x,pad.top); ctx.lineTo(x,pad.top+cH); ctx.stroke(); ctx.setLineDash([]);
+      const zl = this.zoomLabel ? this.zoomLabel + ' \u2014 ' : '';
+      const title = zl + labels[this._tipIdx];
+      const rows = datasets.map(ds => ' ' + ds.label + ': ' + (ds.data[this._tipIdx] ?? '\u2014') + ' activities');
+      const allLines = [title, ...rows];
+      ctx.font = '11px system-ui,sans-serif';
+      const tw = Math.max(...allLines.map(l => ctx.measureText(l).width)) + 24;
+      const th = allLines.length * 18 + 12;
+      let tx = x + 12, ty = pad.top + 4;
+      if (tx + tw > W - 8) tx = x - tw - 12;
+      ctx.fillStyle = '#1a1d27'; ctx.strokeStyle = '#2d3250'; ctx.lineWidth = 1;
+      this._rrect(ctx, tx, ty, tw, th, 6); ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.font = 'bold 11px system-ui,sans-serif'; ctx.fillStyle = '#e8eaf0';
+      ctx.fillText(title, tx+12, ty+8);
+      ctx.font = '11px system-ui,sans-serif';
+      datasets.forEach((ds, i) => {
+        ctx.fillStyle = ds.borderColor || '#a0a8c8';
+        ctx.fillText(rows[i], tx+12, ty+8+(i+1)*18);
+      });
+    }
+  }
+  _onHover(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const xS = this.labels.length > 1 ? this.cW / (this.labels.length - 1) : 0;
+    const idx = Math.round((e.clientX - r.left - this.pad.left) / xS);
+    const ni = (idx >= 0 && idx < this.labels.length) ? idx : -1;
+    if (ni !== this._tipIdx) { this._tipIdx = ni; this._render(); }
+  }
+  _onLeave() { if (this._tipIdx !== -1) { this._tipIdx = -1; this._render(); } }
+  resize() { this._render(); }
+  destroy() {
+    if (!this.canvas) return;
+    this.canvas.removeEventListener('mousemove', this._hov);
+    this.canvas.removeEventListener('mouseleave', this._lev);
+    this.canvas = null;
+  }
+}
+
+class MiniBarChart {
+  constructor(canvas, { labels, datasets }) {
+    this.canvas = canvas; this.labels = labels; this.datasets = datasets;
+    this._tipIdx = -1;
+    this._hov = this._onHover.bind(this);
+    this._lev = this._onLeave.bind(this);
+    canvas.addEventListener('mousemove', this._hov);
+    canvas.addEventListener('mouseleave', this._lev);
+    this._render();
+  }
+  _layout() {
+    const dpr = window.devicePixelRatio || 1;
+    const el = this.canvas.parentElement;
+    const W = el ? el.clientWidth  : 400;
+    const H = el ? el.clientHeight : 200;
+    this.canvas.width  = W * dpr;
+    this.canvas.height = H * dpr;
+    this.canvas.style.width  = W + 'px';
+    this.canvas.style.height = H + 'px';
+    this.canvas.getContext('2d').scale(dpr, dpr);
+    this.W = W; this.H = H;
+    this.pad = { top: 16, right: 12, bottom: 52, left: 36 };
+    this.cW = W - this.pad.left - this.pad.right;
+    this.cH = H - this.pad.top  - this.pad.bottom;
+  }
+  _yMax() {
+    const vals = this.datasets.flatMap(d => d.data || []).filter(isFinite);
+    const raw = Math.max(...vals, 1);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    return Math.max(Math.ceil(raw / mag) * mag, 10);
+  }
+  _bartop(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, Math.max(h, 1));
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    ctx.lineTo(x, y + r);      ctx.arcTo(x, y, x + r, y, r);
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h);
+    ctx.closePath();
+  }
+  _rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+  _render() {
+    this._layout();
+    const ctx = this.canvas.getContext('2d');
+    const { W, H, pad, cW, cH, labels, datasets } = this;
+    const ds   = datasets[0];
+    const data = ds?.data || [];
+    const n    = labels.length;
+    const yMax = this._yMax(), nT = 4;
+    const slot = cW / n;
+    const barW = Math.max(4, slot * 0.60);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = '10px system-ui,sans-serif';
+
+    for (let i = 0; i <= nT; i++) {
+      const v = Math.round(yMax / nT * i);
+      const y = pad.top + cH - (v / yMax) * cH;
+      ctx.strokeStyle = 'rgba(45,50,80,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+      ctx.fillStyle = '#7c829c'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(v, pad.left - 4, y);
+    }
+
+    data.forEach((v, i) => {
+      const bH  = Math.max(2, (Math.min(v, yMax) / yMax) * cH);
+      const x   = pad.left + i * slot + (slot - barW) / 2;
+      const y   = pad.top + cH - bH;
+      const isHov = i === this._tipIdx;
+      ctx.fillStyle = isHov ? (ds.borderColor || '#7c829c') : (ds.backgroundColor || ds.borderColor + '88');
+      this._bartop(ctx, x, y, barW, bH, 3); ctx.fill();
+      if (ds.borderColor) {
+        ctx.strokeStyle = ds.borderColor; ctx.lineWidth = 1;
+        this._bartop(ctx, x, y, barW, bH, 3); ctx.stroke();
+      }
+      ctx.save();
+      ctx.translate(x + barW / 2, pad.top + cH + 6);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillStyle = '#7c829c'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText(labels[i], 0, 0);
+      ctx.restore();
+    });
+
+    if (this._tipIdx >= 0 && this._tipIdx < n) {
+      const i    = this._tipIdx;
+      const tipX = pad.left + i * slot + slot / 2;
+      const text = `${labels[i]}: ${data[i] ?? '\u2014'}`;
+      ctx.font = '11px system-ui,sans-serif';
+      const tw = ctx.measureText(text).width + 20, th = 26;
+      let tx = tipX + 6, ty = pad.top + 2;
+      if (tx + tw > W - 4) tx = tipX - tw - 6;
+      ctx.fillStyle = '#1a1d27'; ctx.strokeStyle = '#2d3250'; ctx.lineWidth = 1;
+      this._rrect(ctx, tx, ty, tw, th, 5); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8eaf0'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, tx + 10, ty + th / 2);
+    }
+  }
+  _onHover(e) {
+    const r    = this.canvas.getBoundingClientRect();
+    const slot = this.cW / this.labels.length;
+    const x    = e.clientX - r.left - this.pad.left;
+    const idx  = Math.floor(x / slot);
+    const ni   = (idx >= 0 && idx < this.labels.length) ? idx : -1;
+    if (ni !== this._tipIdx) { this._tipIdx = ni; this._render(); }
+  }
+  _onLeave() { if (this._tipIdx !== -1) { this._tipIdx = -1; this._render(); } }
+  resize()  { this._render(); }
+  destroy() {
+    if (!this.canvas) return;
+    this.canvas.removeEventListener('mousemove', this._hov);
+    this.canvas.removeEventListener('mouseleave', this._lev);
+    this.canvas = null;
+  }
+}
+
+class MiniDoughnutChart {
+  constructor(canvas, { labels, datasets }) {
+    this.canvas = canvas; this.labels = labels; this.datasets = datasets;
+    this._tipIdx = -1; this._slices = null;
+    this._hov = this._onHover.bind(this);
+    this._lev = this._onLeave.bind(this);
+    canvas.addEventListener('mousemove', this._hov);
+    canvas.addEventListener('mouseleave', this._lev);
+    this._render();
+  }
+  _layout() {
+    const dpr = window.devicePixelRatio || 1;
+    const el = this.canvas.parentElement;
+    const W = el ? el.clientWidth  : 400;
+    const H = el ? el.clientHeight : 200;
+    this.canvas.width  = W * dpr;
+    this.canvas.height = H * dpr;
+    this.canvas.style.width  = W + 'px';
+    this.canvas.style.height = H + 'px';
+    this.canvas.getContext('2d').scale(dpr, dpr);
+    this.W = W; this.H = H;
+    this.legendW = Math.min(140, W * 0.42);
+    this.chartW  = W - this.legendW;
+    const side   = Math.min(this.chartW, H) * 0.80;
+    this.cx      = this.chartW / 2;
+    this.cy      = H / 2;
+    this.outerR  = side / 2;
+    this.innerR  = side / 3.2;
+  }
+  _buildSlices(data, colors) {
+    const total = data.reduce((a, b) => a + (b || 0), 0) || 1;
+    let angle = -Math.PI / 2;
+    return data.map((v, i) => {
+      const sweep = (v / total) * Math.PI * 2;
+      const sl = { start: angle, end: angle + sweep, color: colors[i] || '#888', value: v };
+      angle += sweep;
+      return sl;
+    });
+  }
+  _rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+  _render() {
+    this._layout();
+    const ctx = this.canvas.getContext('2d');
+    const { W, H, cx, cy, outerR, innerR, labels, datasets, legendW, chartW } = this;
+    const ds     = datasets[0];
+    const data   = ds?.data  || [];
+    const colors = ds?.backgroundColor || [];
+    const total  = data.reduce((a, b) => a + (b || 0), 0) || 1;
+    ctx.clearRect(0, 0, W, H);
+
+    const slices = this._buildSlices(data, colors);
+    this._slices = slices;
+
+    slices.forEach((s, i) => {
+      const isHov = i === this._tipIdx;
+      const push  = isHov ? 7 : 0;
+      const midA  = (s.start + s.end) / 2;
+      const ox = Math.cos(midA) * push, oy = Math.sin(midA) * push;
+      ctx.beginPath();
+      ctx.arc(cx + ox, cy + oy, outerR, s.start, s.end);
+      ctx.arc(cx + ox, cy + oy, innerR, s.end,   s.start, true);
+      ctx.closePath();
+      ctx.fillStyle = s.color; ctx.fill();
+      ctx.strokeStyle = '#1a1d27'; ctx.lineWidth = 1.5; ctx.stroke();
+    });
+
+    ctx.font = '10px system-ui,sans-serif';
+    const lx    = chartW + 8;
+    const rowH  = Math.min(20, (H - 16) / Math.max(labels.length, 1));
+    const startY = (H - labels.length * rowH) / 2;
+    labels.forEach((lbl, i) => {
+      const y = startY + i * rowH + rowH / 2;
+      ctx.fillStyle = colors[i] || '#888';
+      ctx.fillRect(lx, y - 5, 10, 10);
+      ctx.fillStyle = '#7c829c'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(lbl, lx + 14, y);
+    });
+
+    if (this._tipIdx >= 0 && this._tipIdx < labels.length) {
+      const i    = this._tipIdx;
+      const s    = slices[i];
+      const midA = (s.start + s.end) / 2;
+      const pct  = Math.round(data[i] / total * 100);
+      const text = `${labels[i]}: ${data[i]} (${pct}%)`;
+      ctx.font = '11px system-ui,sans-serif';
+      const tw = ctx.measureText(text).width + 20, th = 26;
+      let tx = cx + Math.cos(midA) * (outerR + 10);
+      let ty = cy + Math.sin(midA) * (outerR + 10) - th / 2;
+      tx = Math.min(Math.max(tx, 4), chartW - tw - 4);
+      ty = Math.min(Math.max(ty, 4), H - th - 4);
+      ctx.fillStyle = '#1a1d27'; ctx.strokeStyle = '#2d3250'; ctx.lineWidth = 1;
+      this._rrect(ctx, tx, ty, tw, th, 5); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#e8eaf0'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, tx + 10, ty + th / 2);
+    }
+  }
+  _onHover(e) {
+    const r    = this.canvas.getBoundingClientRect();
+    const mx   = e.clientX - r.left - this.cx;
+    const my   = e.clientY - r.top  - this.cy;
+    const dist = Math.hypot(mx, my);
+    if (dist < this.innerR || dist > this.outerR + 10) {
+      if (this._tipIdx !== -1) { this._tipIdx = -1; this._render(); }
+      return;
+    }
+    let angle = Math.atan2(my, mx);
+    if (angle < -Math.PI / 2) angle += Math.PI * 2;
+    const slices = this._slices;
+    if (!slices) return;
+    let ni = -1;
+    for (let i = 0; i < slices.length; i++) {
+      if (angle >= slices[i].start && angle < slices[i].end) { ni = i; break; }
+    }
+    if (ni !== this._tipIdx) { this._tipIdx = ni; this._render(); }
+  }
+  _onLeave() { if (this._tipIdx !== -1) { this._tipIdx = -1; this._render(); } }
+  resize()  { this._render(); }
+  destroy() {
+    if (!this.canvas) return;
+    this.canvas.removeEventListener('mousemove', this._hov);
+    this.canvas.removeEventListener('mouseleave', this._lev);
+    this.canvas = null;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1244,37 +2513,15 @@ function buildTimelineDatasets(zoom) {
 }
 
 function renderTimeline() {
-  const ctx = $('timelineChart').getContext('2d');
-  if(timelineChart) timelineChart.destroy();
+  const canvas = $('timelineChart');
+  if (!canvas) return;
+  if (timelineChart) { timelineChart.destroy(); timelineChart = null; }
   const { labels, datasets } = buildTimelineDatasets(activeZoom);
-
-  timelineChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1a1d27',
-          borderColor: '#2d3250',
-          borderWidth: 1,
-          titleColor: '#e8eaf0',
-          bodyColor: '#a0a8c8',
-          padding: 10
-        }
-      },
-      scales: {
-        x: { grid:{ color:'#2d3250' }, ticks:{ color:'#7c829c', font:{size:11} } },
-        y: { grid:{ color:'#2d3250' }, ticks:{ color:'#7c829c', font:{size:11} }, beginAtZero:true }
-      }
-    }
-  });
-
-  // Legend
-  const progs = activeProgram==='all' ? PROGRAMS : PROGRAMS.filter(p=>p.id===activeProgram);
-  $('timelineLegend').innerHTML = progs.map(p=>`
+  if (!datasets.length) return;
+  const zoomLabel = { '1W':'Daily','1M':'Monthly (6 mo)','3M':'Quarterly','6M':'Semi-Annual','1Y':'Annual' }[activeZoom] || '';
+  timelineChart = new MiniLineChart(canvas, { labels, datasets, yLabel: 'Activities', zoomLabel });
+  const progs = activeProgram === 'all' ? PROGRAMS : PROGRAMS.filter(p => p.id === activeProgram);
+  $('timelineLegend').innerHTML = progs.map(p => `
     <div class="legend-item">
       <div class="legend-dot" style="background:${p.color}"></div>${p.abbr}
     </div>`).join('');
@@ -1321,15 +2568,15 @@ function buildPanel(p) {
     <div class="analytics-grid">
       <div class="chart-card">
         <div class="chart-card-title">Activities by Type</div>
-        <div style="height:200px;position:relative"><canvas id="bar-${p.id}"></canvas></div>
+        <div style="height:200px;position:relative;overflow:hidden"><canvas id="bar-${p.id}"></canvas></div>
       </div>
       <div class="chart-card">
         <div class="chart-card-title">Trend Over Time</div>
-        <div style="height:200px;position:relative"><canvas id="line-${p.id}"></canvas></div>
+        <div style="height:200px;position:relative;overflow:hidden"><canvas id="line-${p.id}"></canvas></div>
       </div>
       <div class="chart-card">
         <div class="chart-card-title">Activity Distribution</div>
-        <div style="height:200px;position:relative"><canvas id="pie-${p.id}"></canvas></div>
+        <div style="height:200px;position:relative;overflow:hidden"><canvas id="pie-${p.id}"></canvas></div>
       </div>
     </div>
 
@@ -1396,76 +2643,32 @@ function generateTableRows(p) {
 }
 
 function createProgramCharts(p) {
-  const barCtx  = document.getElementById(`bar-${p.id}`)?.getContext('2d');
-  const lineCtx = document.getElementById(`line-${p.id}`)?.getContext('2d');
-  const pieCtx  = document.getElementById(`pie-${p.id}`)?.getContext('2d');
+  const barEl  = document.getElementById(`bar-${p.id}`);
+  const lineEl = document.getElementById(`line-${p.id}`);
+  const pieEl  = document.getElementById(`pie-${p.id}`);
 
-  const chartDefaults = {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{
-      legend:{display:false},
-      tooltip:{
-        backgroundColor:'#1a1d27',borderColor:'#2d3250',borderWidth:1,
-        titleColor:'#e8eaf0',bodyColor:'#a0a8c8',padding:8
-      }
-    }
-  };
-
-  if(barCtx && !analyticsCharts[`bar-${p.id}`]) {
-    analyticsCharts[`bar-${p.id}`] = new Chart(barCtx, {
-      type:'bar',
-      data:{
-        labels: ACTIVITY_TYPES,
-        datasets:[{ data:p.activities_by_type, backgroundColor:p.color+'88',
-          borderColor:p.color, borderWidth:1, borderRadius:4 }]
-      },
-      options:{
-        ...chartDefaults,
-        scales:{
-          x:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:9},maxRotation:45}},
-          y:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:10}},beginAtZero:true}
-        }
-      }
+  if (barEl && !analyticsCharts[`bar-${p.id}`]) {
+    analyticsCharts[`bar-${p.id}`] = new MiniBarChart(barEl, {
+      labels: ACTIVITY_TYPES,
+      datasets: [{ data: p.activities_by_type, backgroundColor: p.color+'88', borderColor: p.color }]
     });
   }
 
-  if(lineCtx && !analyticsCharts[`line-${p.id}`]) {
-    analyticsCharts[`line-${p.id}`] = new Chart(lineCtx, {
-      type:'line',
-      data:{
-        labels:['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'],
-        datasets:[{
-          data:p.trend, borderColor:p.color, backgroundColor:p.color+'22',
-          borderWidth:2, pointRadius:3, tension:0.4, fill:true
-        }]
-      },
-      options:{
-        ...chartDefaults,
-        scales:{
-          x:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:9}}},
-          y:{grid:{color:'#2d3250'},ticks:{color:'#7c829c',font:{size:10}},beginAtZero:true}
-        }
-      }
+  if (lineEl && !analyticsCharts[`line-${p.id}`]) {
+    analyticsCharts[`line-${p.id}`] = new MiniLineChart(lineEl, {
+      labels: ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'],
+      datasets: [{ data: p.trend, borderColor: p.color, backgroundColor: p.color+'22', label: p.abbr }]
     });
   }
 
-  if(pieCtx && !analyticsCharts[`pie-${p.id}`]) {
-    analyticsCharts[`pie-${p.id}`] = new Chart(pieCtx, {
-      type:'doughnut',
-      data:{
-        labels:['Workshops','Coaching','Gate Reviews','Testing','Advisory'],
-        datasets:[{
-          data:p.distribution,
-          backgroundColor:[p.color+'cc',p.color+'99',p.color+'66',p.color+'44',p.color+'22'],
-          borderColor:p.color+'44', borderWidth:1
-        }]
-      },
-      options:{
-        ...chartDefaults,
-        plugins:{
-          legend:{display:true,position:'right',labels:{color:'#7c829c',font:{size:10},boxWidth:10}}
-        }
-      }
+  if (pieEl && !analyticsCharts[`pie-${p.id}`]) {
+    analyticsCharts[`pie-${p.id}`] = new MiniDoughnutChart(pieEl, {
+      labels: ['Workshops','Coaching','Gate Reviews','Testing','Advisory'],
+      datasets: [{
+        data: p.distribution,
+        backgroundColor: [p.color+'cc', p.color+'99', p.color+'66', p.color+'44', p.color+'22'],
+        borderColor: p.color+'44'
+      }]
     });
   }
 }
@@ -1476,7 +2679,10 @@ function switchTab(id) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll(`.tab-btn`).forEach(b=>{ if(b.textContent.trim().startsWith(id)) b.classList.add('active'); });
   document.getElementById(`panel-${id}`)?.classList.add('active');
-  createProgramCharts(PROGRAMS.find(p=>p.id===id));
+  // Create charts if not yet built, then resize now the panel is visible
+  const prog = PROGRAMS.find(p=>p.id===id);
+  if (prog) createProgramCharts(prog);
+  ['bar','line','pie'].forEach(pfx => { analyticsCharts[`${pfx}-${id}`]?.resize(); });
 }
 
 function activateTab(id) {
@@ -1541,75 +2747,6 @@ function acknowledgeAll() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   RIGHT SIDEBAR
-═══════════════════════════════════════════════════════ */
-function renderRightSidebar() {
-  const totalToday = PROGRAMS.reduce((s,p)=>s+p.metrics.today,0);
-  const totalActs  = PROGRAMS.reduce((s,p)=>s+p.metrics.total,0);
-  const avgCompl   = Math.round(PROGRAMS.reduce((s,p)=>s+p.metrics.completion,0)/PROGRAMS.length);
-
-  $('quickStats').innerHTML = `
-    <div class="qstat">
-      <div class="qstat-left">
-        <div class="qstat-label">Activities Today</div>
-        <div class="qstat-value" style="color:#3b82f6">${totalToday}</div>
-        <div class="qstat-delta delta-up">↑ 12% vs yesterday</div>
-      </div>
-      <div class="qstat-icon">⚡</div>
-    </div>
-    <div class="qstat">
-      <div class="qstat-left">
-        <div class="qstat-label">Total Activities</div>
-        <div class="qstat-value">${fmt(totalActs)}</div>
-        <div class="qstat-delta delta-up">↑ 8% this week</div>
-      </div>
-      <div class="qstat-icon">📋</div>
-    </div>
-    <div class="qstat">
-      <div class="qstat-left">
-        <div class="qstat-label">Avg. Completion</div>
-        <div class="qstat-value" style="color:#22c55e">${avgCompl}%</div>
-        <div class="qstat-delta delta-up">↑ 3pts this month</div>
-      </div>
-      <div class="qstat-icon">🎯</div>
-    </div>
-    <div class="qstat">
-      <div class="qstat-left">
-        <div class="qstat-label">Active Ventures</div>
-        <div class="qstat-value">138</div>
-        <div class="qstat-delta delta-up">↑ 14 new this cohort</div>
-      </div>
-      <div class="qstat-icon">🚀</div>
-    </div>`;
-
-  const sorted = [...PROGRAMS].sort((a,b)=>b.metrics.completion-a.metrics.completion).slice(0,5);
-  const max = sorted[0].metrics.completion;
-  $('topProgList').innerHTML = sorted.map((p,i)=>`
-    <div class="top-prog-item">
-      <div class="tp-rank">${i+1}</div>
-      <div class="tp-dot" style="background:${p.color}"></div>
-      <div class="tp-body">
-        <div class="tp-name">${p.abbr}</div>
-        <div class="tp-val">${p.metrics.completion}% complete</div>
-      </div>
-      <div class="tp-bar-wrap">
-        <div class="tp-bar" style="width:${Math.round(p.metrics.completion/max*100)}%;background:${p.color}"></div>
-      </div>
-    </div>`).join('');
-
-  $('completionBars').innerHTML = PROGRAMS.map(p=>`
-    <div class="cbar-item">
-      <div class="cbar-header">
-        <span class="cbar-name" style="color:${p.color}">${p.abbr}</span>
-        <span class="cbar-pct" style="color:${p.color}">${p.metrics.completion}%</span>
-      </div>
-      <div class="cbar-track">
-        <div class="cbar-fill" style="width:${p.metrics.completion}%;background:${p.color}"></div>
-      </div>
-    </div>`).join('');
-}
-
-/* ═══════════════════════════════════════════════════════
    PROGRAM SELECTION
 ═══════════════════════════════════════════════════════ */
 function selectProgram(id) {
@@ -1656,10 +2793,10 @@ function buildModalBody(p) {
     </div>
     <div class="modal-stat">
       <div class="modal-stat-label">Completion Rate</div>
-      <div class="modal-stat-value">${p.metrics.completion}%</div>
+      <div class="modal-stat-value">${computeCompletion(p)}%</div>
       <div class="modal-stat-sub">
         <div style="height:6px;background:var(--bg-hover);border-radius:3px;margin-top:4px">
-          <div style="height:100%;width:${p.metrics.completion}%;background:${p.color};border-radius:3px"></div>
+          <div style="height:100%;width:${computeCompletion(p)}%;background:${p.color};border-radius:3px"></div>
         </div>
       </div>
     </div>
@@ -1687,27 +2824,71 @@ function buildModalBody(p) {
   <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn btn-primary" onclick="closeModal()">✓ Close</button>
     <button class="btn btn-ghost" onclick="selectProgram('${p.id}');closeModal()">View Full Details</button>
-    <button class="btn btn-ghost" onclick="exportPDF()">📄 Export Report</button>
+    <button class="btn btn-ghost" onclick="openExportModal()">📄 Export Report</button>
   </div>`;
 }
 
 function getKPIVal(p, key) { return p.kpis[key]; }
 
+function computeCompletion(p) {
+  const k = p.kpis || {};
+  const safe = (a, b) => (b > 0) ? Math.min(a / b, 1) : null;
+  const stored = p.metrics?.completion ?? 0;
+  let ratios = [];
+
+  if (p.id === 'GIP' || p.id === 'TES') {
+    const r1 = safe(k.enrolled, k.target_enrolled);   if (r1 !== null) ratios.push(r1);
+    const r2 = safe(k.cohorts_ytd, k.cohorts_target);  if (r2 !== null) ratios.push(r2);
+    ratios.push((k.graduation_rate  || 0) / 100);
+    ratios.push((k.vbp_progression  || 0) / 100);
+  } else if (p.id === 'VBP') {
+    const r1 = safe(k.enrolled, k.target_enrolled);   if (r1 !== null) ratios.push(r1);
+    ratios.push((k.graduation_rate  || 0) / 100);
+  } else if (p.id === 'PCTP') {
+    const r1 = safe(k.products_tested,  k.target_products);  if (r1 !== null) ratios.push(r1);
+    const r2 = safe(k.testers_engaged,  k.target_testers);   if (r2 !== null) ratios.push(r2);
+    const r3 = safe(k.cycles_ytd,       k.cycles_target);    if (r3 !== null) ratios.push(r3);
+    ratios.push((k.feedback_completion  || 0) / 100);
+  } else if (p.id === 'SAP') {
+    const r1 = safe(k.startups_supported, k.target_supported); if (r1 !== null) ratios.push(r1);
+    const r2 = safe(k.clinic_sessions,    k.target_sessions);  if (r2 !== null) ratios.push(r2);
+    const r3 = safe(k.advisors,           k.target_advisors);  if (r3 !== null) ratios.push(r3);
+    ratios.push((k.routing_accuracy || 0) / 100);
+  } else if (p.id === 'IRP') {
+    const r1 = safe(k.enrolled,     k.target_enrolled);  if (r1 !== null) ratios.push(r1);
+    const r2 = safe(k.cohorts_ytd,  k.cohorts_target);   if (r2 !== null) ratios.push(r2);
+    ratios.push((k.graduation_rate  || 0) / 100);
+  } else if (p.id === 'GMP') {
+    const r1 = safe(k.portfolio_active, k.target_portfolio); if (r1 !== null) ratios.push(r1);
+    // reporting_compliance lives at top-level in fallback; may be absent from API response
+    const rc = k.reporting_compliance ?? p.reporting_compliance;
+    if (rc != null) ratios.push(Math.min((rc || 0) / 100, 1));
+  } else if (p.id === 'IDIA') {
+    const r1 = safe(k.partners,          k.target_partners);   if (r1 !== null) ratios.push(r1);
+    const r2 = safe(k.startups_admitted, k.target_admitted);   if (r2 !== null) ratios.push(r2);
+    const r3 = safe(k.pilots,            k.target_pilots);     if (r3 !== null) ratios.push(r3);
+    const r4 = safe(k.cohorts_ytd,       k.cohorts_target);    if (r4 !== null) ratios.push(r4);
+  }
+  if (!ratios.length) return stored;
+  return Math.round(ratios.reduce((s, r) => s + r, 0) / ratios.length * 100);
+}
+
 function getKPILines(p) {
   const lines = [];
   const k = p.kpis;
   const g = (val, t, u='%') => ({ label:'', value:`${val}${u} / ${t}${u}`, color: val>=t ? '#22c55e' : val>=t*0.8 ? '#f59e0b' : '#ef4444' });
+  const pct = (a, b) => (b > 0) ? ` (${Math.round(Math.min(a / b, 1) * 100)}%)` : '';
 
   if(p.id==='GIP'||p.id==='TES') {
-    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}`});
-    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}`, color: k.enrolled>=k.target_enrolled*0.8?'#22c55e':'#f59e0b'});
+    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}${pct(k.cohorts_ytd, k.cohorts_target)}`});
+    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}${pct(k.enrolled, k.target_enrolled)}`, color: k.enrolled>=k.target_enrolled*0.8?'#22c55e':'#f59e0b'});
     lines.push({label:'Women-led (%)',               value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
     lines.push({label:'Validated Prototypes',        value:`${k.prototypes}`});
     lines.push({label:'Graduation Rate',             value:`${k.graduation_rate}%`, color: k.graduation_rate>=70?'#22c55e':'#f59e0b'});
     lines.push({label:'VBP Progression Rate',        value:`${k.vbp_progression}%`, color: k.vbp_progression>=50?'#22c55e':'#f59e0b'});
     lines.push({label:'Satisfaction Score',          value:`${k.satisfaction}/5.0`});
   } else if(p.id==='VBP') {
-    lines.push({label:'Enrolled / Target',           value:`${k.enrolled} / ${k.target_enrolled}`});
+    lines.push({label:'Enrolled / Target',           value:`${k.enrolled} / ${k.target_enrolled}${pct(k.enrolled, k.target_enrolled)}`});
     lines.push({label:'Women-led (%)',               value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
     lines.push({label:'Functional MVPs',             value:`${k.mvps}`});
     lines.push({label:'Paying Customers (total)',    value:k.paying_customers});
@@ -1716,23 +2897,23 @@ function getKPILines(p) {
     lines.push({label:'Routing to IRP (%)',          value:`${k.irp_routing}%`});
     lines.push({label:'Routing to GMP (%)',          value:`${k.gmp_routing}%`});
   } else if(p.id==='PCTP') {
-    lines.push({label:'Products Tested / Target',   value:`${k.products_tested} / ${k.target_products}`});
-    lines.push({label:'Testers Engaged / Target',   value:`${k.testers_engaged} / ${k.target_testers}`});
+    lines.push({label:'Products Tested / Target',   value:`${k.products_tested} / ${k.target_products}${pct(k.products_tested, k.target_products)}`});
+    lines.push({label:'Testers Engaged / Target',   value:`${k.testers_engaged} / ${k.target_testers}${pct(k.testers_engaged, k.target_testers)}`});
     lines.push({label:'Feedback Completion Rate',   value:`${k.feedback_completion}%`, color: k.feedback_completion>=70?'#22c55e':'#f59e0b'});
     lines.push({label:'IP/Conf. Compliance',        value:`${k.ip_compliance}%`, color:'#22c55e'});
     lines.push({label:'Data Privacy Incidents',     value:k.data_incidents===0?'✓ Zero':'⚠ '+k.data_incidents, color: k.data_incidents===0?'#22c55e':'#ef4444'});
-    lines.push({label:'Testing Cycles YTD',         value:`${k.cycles_ytd} / ${k.cycles_target}`});
+    lines.push({label:'Testing Cycles YTD',         value:`${k.cycles_ytd} / ${k.cycles_target}${pct(k.cycles_ytd, k.cycles_target)}`});
     lines.push({label:'MVP Improvement Adoption',   value:`${p.improvement_adoption}%`});
   } else if(p.id==='SAP') {
-    lines.push({label:'Startups Supported',         value:`${k.startups_supported} / ${k.target_supported}`});
-    lines.push({label:'Clinic Sessions YTD',        value:`${k.clinic_sessions} / ${k.target_sessions}`});
-    lines.push({label:'Active Advisors',             value:`${k.advisors} / ${k.target_advisors}`});
+    lines.push({label:'Startups Supported',         value:`${k.startups_supported} / ${k.target_supported}${pct(k.startups_supported, k.target_supported)}`});
+    lines.push({label:'Clinic Sessions YTD',        value:`${k.clinic_sessions} / ${k.target_sessions}${pct(k.clinic_sessions, k.target_sessions)}`});
+    lines.push({label:'Active Advisors',             value:`${k.advisors} / ${k.target_advisors}${pct(k.advisors, k.target_advisors)}`});
     lines.push({label:'Alumni Supported',           value:k.alumni_supported});
     lines.push({label:'Routing Accuracy',           value:`${k.routing_accuracy}%`, color: k.routing_accuracy>=80?'#22c55e':'#f59e0b'});
     lines.push({label:'Conversion Rate (→Program)', value:`${k.conversion_rate}%`});
     lines.push({label:'Satisfaction Score',         value:`${k.satisfaction}/5.0`});
   } else if(p.id==='IRP') {
-    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}`});
+    lines.push({label:'Enrolled / Target',          value:`${k.enrolled} / ${k.target_enrolled}${pct(k.enrolled, k.target_enrolled)}`});
     lines.push({label:'Pitch Decks Completed',      value:k.pitch_decks});
     lines.push({label:'Data Rooms at Min. Standard',value:k.data_rooms});
     lines.push({label:'Financial Models Produced',  value:k.financial_models});
@@ -1741,7 +2922,7 @@ function getKPILines(p) {
     lines.push({label:'Capital Raised YTD (USD)',   value:`$${k.capital_raised_usd.toLocaleString()}`});
     lines.push({label:'Demo Day Score',             value:`${p.demo_day_score}/5.0`});
   } else if(p.id==='GMP') {
-    lines.push({label:'Active Portfolio / Target',  value:`${k.portfolio_active} / ${k.target_portfolio}`});
+    lines.push({label:'Active Portfolio / Target',  value:`${k.portfolio_active} / ${k.target_portfolio}${pct(k.portfolio_active, k.target_portfolio)}`});
     lines.push({label:'Women-led Companies (%)',    value:`${k.women_pct}%`, color: k.women_pct>=40?'#22c55e':'#f59e0b'});
     lines.push({label:'Sector Diversity',           value:`${k.sector_diversity} sectors`});
     lines.push({label:'Bankability Certified',      value:`${k.bankability_certified} companies`});
@@ -1751,13 +2932,13 @@ function getKPILines(p) {
     lines.push({label:'Portfolio Default Rate',     value:`${k.default_rate}%`, color: k.default_rate<5?'#22c55e':k.default_rate<10?'#f59e0b':'#ef4444'});
     lines.push({label:'Reporting Compliance',       value:`${p.reporting_compliance}%`, color:'#22c55e'});
   } else if(p.id==='IDIA') {
-    lines.push({label:'Industry Partners / Target', value:`${k.partners} / ${k.target_partners}`, color: k.partners<k.target_partners?'#f59e0b':'#22c55e'});
-    lines.push({label:'Startups Admitted / Target', value:`${k.startups_admitted} / ${k.target_admitted}`});
-    lines.push({label:'Pilots Implemented',         value:`${k.pilots} / ${k.target_pilots}`});
+    lines.push({label:'Industry Partners / Target', value:`${k.partners} / ${k.target_partners}${pct(k.partners, k.target_partners)}`, color: k.partners<k.target_partners?'#f59e0b':'#22c55e'});
+    lines.push({label:'Startups Admitted / Target', value:`${k.startups_admitted} / ${k.target_admitted}${pct(k.startups_admitted, k.target_admitted)}`});
+    lines.push({label:'Pilots Implemented',         value:`${k.pilots} / ${k.target_pilots}${pct(k.pilots, k.target_pilots)}`});
     lines.push({label:'Contracts / LOIs Secured',  value:k.contracts_lois});
     lines.push({label:'Revenue from Contracts (USD)',value:`$${k.revenue_usd.toLocaleString()}`});
     lines.push({label:'MIIC Pipeline Ventures (%)', value:`${k.miic_pipeline_pct}%`});
-    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}`, color: k.cohorts_ytd<k.cohorts_target?'#ef4444':'#22c55e'});
+    lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}${pct(k.cohorts_ytd, k.cohorts_target)}`, color: k.cohorts_ytd<k.cohorts_target?'#ef4444':'#22c55e'});
     lines.push({label:'Pilot-to-Contract Rate',    value:`${p.pilot_conversion}%`});
   }
   return lines;
@@ -1944,11 +3125,11 @@ let searchIndex = [];
 function buildSearchIndex() {
   searchIndex = [
     ...PROGRAMS.map(p=>({ label:`${p.icon} ${p.abbr} — ${p.name}`, action:()=>selectProgram(p.id), tag:'Program' })),
-    ...ALERTS.map(a=>({ label:`🔔 ${a.title}`, action:()=>{ scrollTo('section-alerts'); selectProgram(a.program); }, tag:'Alert' })),
-    { label:'📊 Detailed Analytics', action:()=>scrollTo('section-analytics'), tag:'Section' },
-    { label:'📅 Activity Timeline',  action:()=>scrollTo('section-timeline'),  tag:'Section' },
-    { label:'📄 Export PDF',          action:exportPDF, tag:'Action' },
-    { label:'📊 Export Excel',        action:exportExcel, tag:'Action' },
+    ...ALERTS.map(a=>({ label:`🔔 ${a.title}`, action:()=>{ scrollToSection('section-alerts'); selectProgram(a.program); }, tag:'Alert' })),
+    { label:'📊 Detailed Analytics', action:()=>scrollToSection('section-analytics'), tag:'Section' },
+    { label:'📅 Activity Timeline',  action:()=>scrollToSection('section-timeline'),  tag:'Section' },
+    { label:'📄 Export PDF',          action:openExportModal, tag:'Action' },
+    { label:'📊 Export Excel',        action:openExportModal, tag:'Action' },
   ];
 }
 
@@ -1974,7 +3155,14 @@ function searchHit(i) {
 }
 
 document.addEventListener('click', e=>{
-  if(!$('globalSearch').contains(e.target)) $('searchResults').classList.remove('open');
+  if (!e.target.closest?.('.ms-wrap')) {
+    document.querySelectorAll('.ms-panel.open').forEach(p => p.classList.remove('open'));
+  }
+  if (!e.target.closest?.('.status-edit-wrap')) {
+    document.querySelectorAll('.sep-panel.open').forEach(p => p.classList.remove('open'));
+  }
+  if (!e.target.closest?.('.ver-wrap')) $('changelogPopup')?.classList.remove('open');
+  if (!$('globalSearch')?.contains(e.target)) $('searchResults')?.classList.remove('open');
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -2022,21 +3210,100 @@ function exportTableCSV(tableId, filename) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   EXPORT
+   EXPORT MODAL
 ═══════════════════════════════════════════════════════ */
-function exportPDF() {
-  // Stamp date in the print header and trigger browser print dialog
-  const d = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
-  const el = document.getElementById('printDate');
-  if(el) el.textContent = d;
-  window.print();
+let _expFmt = 'csv';
+
+function openExportModal() {
+  const grid = $('expProgGrid');
+  if (grid) {
+    grid.innerHTML = PROGRAMS.map(p =>
+      `<label class="exp-prog-item">
+        <input type="checkbox" class="exp-prog-cb" value="${escHtml(p.id)}" checked />
+        <span>${escHtml(p.icon)} ${escHtml(p.abbr)}</span>
+      </label>`
+    ).join('');
+  }
+  setExpFmt('csv');
+  if ($('expDateFrom')) $('expDateFrom').value = '';
+  if ($('expDateTo'))   $('expDateTo').value   = '';
+  $('exportOverlay')?.classList.add('open');
 }
-function exportExcel() {
-  // Build simple CSV of portfolio data
+
+function closeExportModal(evt) {
+  if (!evt || evt.target === $('exportOverlay')) {
+    $('exportOverlay')?.classList.remove('open');
+  }
+}
+
+function _expSelectAll(val) {
+  document.querySelectorAll('.exp-prog-cb').forEach(cb => cb.checked = val);
+}
+
+function setExpFmt(fmt) {
+  _expFmt = fmt;
+  $('expFmtCsv')?.classList.toggle('exp-selected', fmt === 'csv');
+  $('expFmtPdf')?.classList.toggle('exp-selected', fmt === 'pdf');
+  const ds = $('expDateSection');
+  if (ds) ds.style.display = fmt === 'csv' ? '' : 'none';
+}
+
+function runExport() {
+  const selected = [...document.querySelectorAll('.exp-prog-cb:checked')].map(cb => cb.value);
+  if (!selected.length) { showToast('⚠️ Select at least one program.'); return; }
+  const progs = PROGRAMS.filter(p => selected.includes(p.id));
+  const from  = $('expDateFrom')?.value || '';
+  const to    = $('expDateTo')?.value   || '';
+  closeExportModal();
+  if (_expFmt === 'pdf') {
+    doExportPDF(progs);
+  } else {
+    doExportCSV(progs, from, to);
+  }
+}
+
+function doExportPDF(progs) {
+  // Temporarily swap PROGRAMS so only selected cards are rendered, print, restore.
+  const saved = PROGRAMS;
+  PROGRAMS = progs;
+  renderAll();
+  const d = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+  const el = $('printDate'); if (el) el.textContent = d;
+  window.print(); // synchronous — blocks until dialog is dismissed
+  PROGRAMS = saved;
+  renderAll();
+}
+
+function doExportCSV(progs, from, to) {
   const headers = ['Program','Abbr','Stage','Status','Activities Today','Total Activities','Completion %','Budget Used %'];
-  const rows = PROGRAMS.map(p=>[p.name,p.abbr,p.stage,statusLabel(p.status),p.metrics.today,p.metrics.total,p.metrics.completion,p.budget_used]);
-  const csv = [headers,...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
-  downloadBlob(csv, 'MIIC_Portfolio_Export.csv', 'text/csv');
+  let rows = progs.map(p => [
+    p.name, p.abbr, p.stage, statusLabel(p.status),
+    p.metrics.today, p.metrics.total, computeCompletion(p), p.budget_used
+  ]);
+  // Append activity rows when available and date range is given
+  if (loggedActivities.length && (from || to)) {
+    const ids = new Set(progs.map(p => p.id));
+    const acts = loggedActivities.filter(a => {
+      if (!ids.has(a.program_id)) return false;
+      if (from && (a.date || '') < from) return false;
+      if (to   && (a.date || '') > to)   return false;
+      return true;
+    });
+    if (acts.length) {
+      rows.push([]);
+      rows.push(['--- Activities ---', '', '', '', '', '', '', '']);
+      rows.push(['Program', 'Type', 'Description', 'Date', 'Status', '', '', '']);
+      acts.forEach(a => rows.push([
+        a.program_id || '', a.type || '', a.description || '', a.date || '', a.status || '', '', '', ''
+      ]));
+    }
+  }
+  const csv = [headers, ...rows].map(r =>
+    r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  const fname = `MIIC_Export_${new Date().toISOString().slice(0,10)}.csv`;
+  downloadBlob(csv, fname, 'text/csv');
+  showToast(`✅ Exported ${progs.length} program(s) to CSV.`);
 }
 function downloadBlob(content, filename, type) {
   const blob = new Blob([content],{type});
@@ -2050,38 +3317,128 @@ function downloadBlob(content, filename, type) {
 /* ═══════════════════════════════════════════════════════
    MISC
 ═══════════════════════════════════════════════════════ */
-function scrollTo(id) {
+function scrollToSection(id) {
   document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function openReportsArchive() {
+  const overlay = document.getElementById('modalOverlay');
+  const title   = document.getElementById('modalTitle');
+  const body    = document.getElementById('modalBody');
+  title.textContent = '📁 Reports Archive';
+  body.innerHTML = `
+    <div style="text-align:center;padding:32px 16px;">
+      <div style="font-size:48px;margin-bottom:16px;">📁</div>
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;">Reports Archive</div>
+      <div style="font-size:13px;color:var(--text-muted);max-width:320px;margin:0 auto 20px;">
+        Archived reports will appear here. Use <strong>Export as PDF</strong> or <strong>Export to Excel</strong> to generate and save reports.
+      </div>
+      <button class="btn btn-primary" onclick="openExportModal();closeModal();">📤 Generate a Report</button>
+    </div>`;
+  overlay.classList.add('open');
+}
+function openSettings() {
+  const overlay = document.getElementById('modalOverlay');
+  const title   = document.getElementById('modalTitle');
+  const body    = document.getElementById('modalBody');
+  title.textContent = '⚙️ Settings';
+  const role = document.getElementById('roleSelect')?.value || 'staff';
+  body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">View Role</div>
+        <select id="settingsRole" style="width:100%;padding:9px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:13px;outline:none;">
+          <option value="board"   ${role==='board'   ?'selected':''}>Board View</option>
+          <option value="manager" ${role==='manager' ?'selected':''}>Manager View</option>
+          <option value="staff"   ${role==='staff'   ?'selected':''}>Program Staff</option>
+          <option value="field"   ${role==='field'   ?'selected':''}>Field Staff</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Auto-Refresh</div>
+        <div style="font-size:13px;color:var(--text-accent);">Data syncs every 6 hours automatically. Use the 🔄 button in the nav to sync immediately.</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="
+          const sel=document.getElementById('settingsRole');
+          if(sel){ document.getElementById('roleSelect').value=sel.value; document.getElementById('roleSelect').dispatchEvent(new Event('change')); }
+          closeModal(); showToast('✅ Settings saved.');
+        ">Save</button>
+      </div>
+    </div>`;
+  overlay.classList.add('open');
+}
+function shareDashboard() {
+  const url = window.location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(()=>showToast('🔗 Dashboard link copied to clipboard!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('🔗 Dashboard link copied to clipboard!');
+  }
+}
+const SORT_MODES = [
+  { label: '↓ Completion', fn: (a,b) => b.metrics.completion - a.metrics.completion },
+  { label: '↑ Completion', fn: (a,b) => a.metrics.completion - b.metrics.completion },
+  { label: 'A→Z Name',     fn: (a,b) => (a.name||a.abbr).localeCompare(b.name||b.abbr) },
+  { label: 'Z→A Name',     fn: (a,b) => (b.name||b.abbr).localeCompare(a.name||a.abbr) },
+  { label: '↓ Activity',   fn: (a,b) => (b.metrics.today||0) - (a.metrics.today||0) },
+];
+let sortModeIdx = -1;
+
 function sortCards() {
-  PROGRAMS.sort((a,b)=>sortAsc?a.metrics.completion-b.metrics.completion:b.metrics.completion-a.metrics.completion);
-  sortAsc=!sortAsc; renderCards();
+  sortModeIdx = (sortModeIdx + 1) % SORT_MODES.length;
+  const mode = SORT_MODES[sortModeIdx];
+  PROGRAMS.sort(mode.fn);
+  const btn = document.getElementById('sortBtn');
+  if (btn) btn.textContent = '⇅ ' + mode.label;
+  renderCards();
+  renderSparklines();
 }
 function filterCards() {
-  const s = $('statusFilter').value;
-  const grid = $('cardsGrid');
-  if(s==='all'){ renderCards(); return; }
-  const progs = PROGRAMS.filter(p=>p.status===s);
-  grid.innerHTML = progs.map(p=>`
-    <div class="prog-card fadeIn" onclick="openModal('${p.id}')">
-      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${p.color};border-radius:12px 12px 0 0"></div>
-      <div class="card-header">
-        <div class="card-prog-id">
-          <div class="card-icon-wrap" style="background:${p.color}20">${p.icon}</div>
-          <div><div class="card-prog-name">${p.abbr}</div><div class="card-prog-stage">${p.stage}</div></div>
-        </div>
-        <div class="status-pill ${statusClass(p.status)}">
-          <div class="status-dot ${statusDotClass(p.status)}"></div>${statusLabel(p.status)}
-        </div>
-      </div>
-      <div class="card-metrics">
-        <div class="metric-item"><div class="metric-val" style="color:${p.color}">${p.metrics.today}</div><div class="metric-lbl">Today</div></div>
-        <div class="metric-item"><div class="metric-val">${fmt(p.metrics.total)}</div><div class="metric-lbl">Total</div></div>
-        <div class="metric-item"><div class="metric-val">${p.metrics.completion}%</div><div class="metric-lbl">Completion</div></div>
-      </div>
-    </div>`).join('');
+  const panel = document.getElementById('quickFilterPanel');
+  const btn   = document.getElementById('filterBtn');
+  if (!panel) return;
+  const open = panel.style.display === 'flex';
+  panel.style.display = open ? 'none' : 'flex';
+  if (btn) btn.classList.toggle('active', !open);
 }
-function toggleFullTimeline() { /* expand/collapse handled by CSS */ }
+
+function qfStatus(val, btn) {
+  FILTER_STATE.status = val ? [val] : [];
+  document.querySelectorAll('#quickFilterPanel .qf-btn[data-group="status"]')
+    .forEach(b => b.classList.toggle('active', b === btn));
+  renderCards();
+  renderSparklines();
+}
+
+function qfPhase(val, btn) {
+  FILTER_STATE.phases = val ? [val] : [];
+  document.querySelectorAll('#quickFilterPanel .qf-btn[data-group="phase"]')
+    .forEach(b => b.classList.toggle('active', b === btn));
+  renderCards();
+  renderSparklines();
+}
+
+function clearQuickFilters() {
+  clearAllFilters();
+  document.querySelectorAll('#quickFilterPanel .qf-btn[data-group="status"]').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('#quickFilterPanel .qf-btn[data-group="phase"]').forEach((b,i)  => b.classList.toggle('active', i===0));
+}
+function toggleFullTimeline() {
+  const container = document.querySelector('#section-timeline .chart-container');
+  const btn = document.querySelector('#section-timeline .section-actions .btn-ghost');
+  if (!container) return;
+  const expanded = container.dataset.expanded === 'true';
+  container.dataset.expanded = String(!expanded);
+  container.style.height = expanded ? '280px' : '520px';
+  if (btn) btn.innerHTML = expanded ? '&#x229E; Expand' : '&#x229F; Collapse';
+  if (timelineChart) timelineChart.resize();
+}
 
 /* ═══════════════════════════════════════════════════════
    ROLE-BASED VIEW
@@ -2124,8 +3481,95 @@ async function triggerAutoAlerts() {
   } catch (_) { /* API unavailable — keep existing alerts */ }
 }
 
-// Poll for fresh alerts every 60 seconds so the dashboard
-// reflects newly created or acknowledged alerts without a page reload.
+/* ═══════════════════════════════════════════════════════
+   AUTO-REFRESH & DATA SYNC
+═══════════════════════════════════════════════════════ */
+const FULL_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours in ms
+
+function updateSyncBadge() {
+  const el = $('syncBadge');
+  if (!el) return;
+  if (!lastSyncTime) {
+    el.textContent = '⟳ Never synced';
+    el.className = 'sync-badge tip';
+    return;
+  }
+  const mins = Math.round((Date.now() - lastSyncTime) / 60_000);
+  el.textContent = mins < 1 ? '⟳ Just synced' : `⟳ ${mins}m ago`;
+  el.className = 'sync-badge synced tip';
+}
+
+async function fullDataRefresh() {
+  const el = $('syncBadge');
+  if (el) { el.textContent = '⟳ Syncing…'; el.className = 'sync-badge syncing tip'; }
+  try {
+    const [progsRes, alertsRes, actsRes] = await Promise.all([
+      fetch(`${API_BASE}/programs.php`),
+      fetch(`${API_BASE}/alerts.php`),
+      fetch(`${API_BASE}/activities.php`),
+    ]);
+    if (!progsRes.ok || !alertsRes.ok) throw new Error('API error');
+    PROGRAMS = mergeChartFallbacks(await progsRes.json());
+    ALERTS   = (await alertsRes.json()).map(normalizeAlert);
+    const dbActs = await actsRes.json();
+    dbActs.forEach(a => {
+      if (!loggedActivities.find(x => String(x.id) === String(a.id))) {
+        loggedActivities.push(a);
+      }
+    });
+    lastSyncTime = Date.now();
+    renderAll();
+    updateSyncBadge();
+    showToast('✅ Dashboard data refreshed.');
+    // Run external data source stubs (configure credentials below to enable)
+    await fetchKoboData();
+    await fetchSurveyCTOData();
+  } catch (_) {
+    if (el) { el.textContent = '⟳ Sync failed'; el.className = 'sync-badge tip'; }
+  }
+}
+
+// ─── Kobo Toolbox stub ─────────────────────────────────────────────────────
+// Set KOBO_API_TOKEN + KOBO_FORM_ID to ingest live Kobo submissions.
+// Route through api/kobo_proxy.php so the token stays server-side.
+const KOBO_API_TOKEN = ''; // TODO: your Kobo Toolbox API token
+const KOBO_FORM_ID   = ''; // TODO: asset UID, e.g. 'aXXXXXXXXXXXXXX'
+
+async function fetchKoboData() {
+  if (!KOBO_API_TOKEN || !KOBO_FORM_ID) return; // not yet configured
+  try {
+    // Server proxy calls:
+    // GET https://kf.kobotoolbox.org/api/v2/assets/{KOBO_FORM_ID}/data.json
+    // Authorization: Token {KOBO_API_TOKEN}
+    const res = await fetch(`${API_BASE}/kobo_proxy.php?form=${encodeURIComponent(KOBO_FORM_ID)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    // TODO: map data.results rows → MIIC activity fields and push to loggedActivities
+    console.info('[Kobo] Received', data.count ?? data.results?.length ?? 0, 'submissions');
+  } catch (_) { /* silent — stub not configured */ }
+}
+
+// ─── SurveyCTO stub ───────────────────────────────────────────────────────
+// Set SCTO_SERVER + SCTO_FORM_ID to ingest SurveyCTO submissions.
+// Route through api/surveycto_proxy.php — never expose credentials in browser.
+const SCTO_SERVER  = ''; // TODO: your SurveyCTO server name, e.g. 'yourorg'
+const SCTO_FORM_ID = ''; // TODO: your SurveyCTO form ID
+
+async function fetchSurveyCTOData() {
+  if (!SCTO_SERVER || !SCTO_FORM_ID) return; // not yet configured
+  try {
+    // Server proxy calls:
+    // GET https://{SCTO_SERVER}.surveycto.com/api/v1/forms/data/csv/{SCTO_FORM_ID}
+    // Authorization: Basic base64(username:password)
+    const res = await fetch(`${API_BASE}/surveycto_proxy.php?form=${encodeURIComponent(SCTO_FORM_ID)}`);
+    if (!res.ok) return;
+    const csv = await res.text();
+    // TODO: parse CSV rows and map to MIIC activity fields, push to loggedActivities
+    console.info('[SurveyCTO] Response bytes:', csv.length);
+  } catch (_) { /* silent — stub not configured */ }
+}
+
+// 60-second alert poll + 6-hour full data refresh + 1-minute badge tick
 function startAutoRefresh() {
   setInterval(async () => {
     try {
@@ -2139,6 +3583,60 @@ function startAutoRefresh() {
       }
     } catch (_) { /* silent fail */ }
   }, 60_000);
+
+  // Full data refresh every 6 hours
+  setInterval(fullDataRefresh, FULL_REFRESH_INTERVAL);
+
+  // Keep the "X min ago" badge current
+  setInterval(updateSyncBadge, 60_000);
+}
+
+/* ═══════════════════════════════════════════════════════
+   VERSION & FEEDBACK
+═══════════════════════════════════════════════════════ */
+function toggleChangelog() {
+  $('changelogPopup')?.classList.toggle('open');
+}
+
+function openFeedback() {
+  $('changelogPopup')?.classList.remove('open');
+  $('feedbackOverlay')?.classList.add('open');
+}
+
+function closeFeedback() {
+  $('feedbackOverlay')?.classList.remove('open');
+}
+
+function closeFeedbackOuter(evt) {
+  if (evt.target === $('feedbackOverlay')) closeFeedback();
+}
+
+function submitFeedback() {
+  const name = ($('fbName')?.value || '').trim() || 'Anonymous';
+  const text = ($('fbText')?.value || '').trim();
+  if (!text) { $('fbText')?.focus(); return; }
+  try {
+    const all = JSON.parse(localStorage.getItem('miic_feedback') || '[]');
+    all.push({ name, text, ts: new Date().toISOString() });
+    localStorage.setItem('miic_feedback', JSON.stringify(all));
+  } catch(_) { /* storage unavailable */ }
+  closeFeedback();
+  if ($('fbName')) $('fbName').value = '';
+  if ($('fbText')) $('fbText').value = '';
+  showToast('\u2705 Thank you! Your suggestion has been saved.');
+}
+
+function showToast(msg) {
+  let t = document.getElementById('miicToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'miicToast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2163,8 +3661,8 @@ function simulateLive() {
 /* ═══════════════════════════════════════════════════════
    FILTERS WIRING
 ═══════════════════════════════════════════════════════ */
-['activityFilter','statusFilter','dateFrom','dateTo'].forEach(id=>{
-  $(id)?.addEventListener('change', ()=>renderAll());
+['dateFrom','dateTo'].forEach(id=>{
+  $(id)?.addEventListener('change', () => applyAllFilters());
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -2174,11 +3672,12 @@ function renderAll() {
   buildSearchIndex();
   renderSidebarList();
   renderPipeline();
+  renderHighlights();
   renderCards();
+  renderSparklines();
   renderTimeline();
   renderAnalytics();
   renderAlerts();
-  renderRightSidebar();
   updateBell();
 }
 

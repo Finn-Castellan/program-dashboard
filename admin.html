@@ -24,7 +24,7 @@
   header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; gap: 14px; }
   header h1 { font-size: 16px; font-weight: 700; }
   header span { color: var(--muted); font-size: 13px; }
-  a.back { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; }
+  a.back { font-size: 13px; color: var(--accent); text-decoration: none; }
   a.back:hover { text-decoration: underline; }
 
   main { max-width: 860px; margin: 32px auto; padding: 0 20px 60px; }
@@ -105,25 +105,99 @@
   .status-caution  { background: #451a0333; color: #fcd34d; }
   .status-behind   { background: #450a0a33; color: #fca5a5; }
 
+  /* ── Role selector (header) ── */
+  .role-select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-weight: 600; padding: 5px 10px; cursor: pointer; transition: border-color .15s; }
+  .role-select:focus { outline: none; border-color: var(--accent); }
+  .role-select option { background: var(--surface); }
+  .role-hidden { display: none !important; }
+
+  /* ── Field Staff: Program Overview cards ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .summary-prog-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; transition: border-color .15s; }
+  .summary-prog-card:hover { border-color: var(--accent); }
+  .summary-prog-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .summary-prog-icon  { font-size: 20px; }
+  .summary-prog-name  { font-size: 13px; font-weight: 700; }
+  .summary-prog-stage { font-size: 11px; color: var(--muted); }
+  .summary-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+  .summary-status.on-track { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+  .summary-status.caution  { background: rgba(245,158,11,0.15);  color: #fcd34d; }
+  .summary-status.behind   { background: rgba(239,68,68,0.15);   color: #fca5a5; }
+  .summary-metrics-row { display: flex; gap: 16px; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .summary-metrics-row strong { color: var(--text); display: block; font-size: 15px; font-weight: 800; }
+  .summary-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .summary-progress-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+
   @media(max-width:600px) { .grid, .grid.three { grid-template-columns: 1fr; } }
+
+  /* ── Login overlay ── */
+  #login-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #login-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 36px 40px; width: 340px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.5);
+  }
+  .login-box h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .login-box p  { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .login-box input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text); padding: 9px 12px;
+    font-size: 14px; margin-bottom: 12px; transition: border-color .15s;
+  }
+  .login-box input:focus { outline: none; border-color: var(--accent); }
+  .login-box .btn-login {
+    width: 100%; padding: 10px; background: var(--accent); color: #fff;
+    border: none; border-radius: 7px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s;
+  }
+  .login-box .btn-login:hover { opacity: .85; }
+  .login-box .btn-login:disabled { opacity: .5; cursor: default; }
+  #login-error { font-size: 12px; color: var(--danger); min-height: 18px; margin-top: 8px; }
 </style>
 </head>
 <body>
+
+<!-- ── Login overlay ─────────────────────────────────────────── -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>&#x1F510; MIIC Admin</h2>
+    <p>Sign in to access the data entry panel</p>
+    <input type="text"     id="li-user" placeholder="Username"  autocomplete="username">
+    <input type="password" id="li-pass" placeholder="Password"  autocomplete="current-password"
+           onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="btn-login" id="li-btn" onclick="doLogin()">Sign In</button>
+    <div id="login-error"></div>
+  </div>
+</div>
 
 <header>
   <span style="font-size:22px">⚙️</span>
   <div>
     <h1>MIIC Admin — Data Entry</h1>
-    <span>Update program metrics, alerts, and activities</span>
+    <span id="role-desc">Update program metrics, alerts, and activities</span>
   </div>
-  <a class="back" href="index.html">← Back to Dashboard</a>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+    <label for="adminRole" style="font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em">VIEW AS</label>
+    <select id="adminRole" class="role-select" onchange="applyRole(this.value)">
+      <option value="manager">👑 Manager</option>
+      <option value="field">📋 Field Staff</option>
+    </select>
+    <button class="btn btn-sm" id="logout-btn" onclick="doLogout()" style="display:none">&#x1F511; Sign Out</button>
+    <a class="back" href="index.html">← Dashboard</a>
+  </div>
 </header>
 
 <main>
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('programs')">Program Metrics</button>
-    <button class="tab" onclick="switchTab('alerts')">Alerts</button>
-    <button class="tab" onclick="switchTab('activities')">Activities</button>
+    <button class="tab active" data-role="manager" onclick="switchTab('programs')">&#x1F4CA; Program Metrics</button>
+    <button class="tab" data-role="manager" onclick="switchTab('alerts')">&#x1F514; Alerts</button>
+    <button class="tab" onclick="switchTab('activities')">&#x1F4CB; Activities</button>
+    <button class="tab" data-role="field" onclick="switchTab('summary')">&#x1F5FA;&#xFE0F; Program Overview</button>
   </div>
 
   <!-- ══════════════════════════════════════════════ PROGRAMS ═══ -->
@@ -159,10 +233,12 @@
             </div>
           </div>
           <div>
-            <label>COMPLETION (%)</label>
-            <div class="range-wrap">
-              <input type="range" id="f-completion" min="0" max="100" oninput="$('f-completion-val').textContent=this.value+'%'">
-              <span id="f-completion-val">0%</span>
+            <label>COMPLETION (%) <span style="font-size:10px;color:var(--success);font-weight:400;text-transform:none;letter-spacing:0">auto-computed from KPIs</span></label>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+              <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">
+                <div id="f-completion-bar" style="height:100%;width:0%;background:var(--accent);border-radius:4px;transition:width .3s"></div>
+              </div>
+              <span id="f-completion-val" style="width:36px;text-align:right;font-weight:700;color:var(--accent);font-size:13px">0%</span>
             </div>
           </div>
           <div>
@@ -263,7 +339,11 @@
         </div>
         <div class="full">
           <label>ACTIVITY NAME</label>
-          <input type="text" id="act-name" placeholder="e.g. Cohort 3 Prototype Review">
+          <select id="act-name-sel" onchange="handleActNameSel()">
+            <option value="">— Select existing name —</option>
+            <option value="__custom__">✏️ Custom…</option>
+          </select>
+          <input type="text" id="act-name" placeholder="Enter activity name…" style="display:none;margin-top:6px">
         </div>
         <div>
           <label>DATE</label>
@@ -279,7 +359,11 @@
         </div>
         <div>
           <label>RESPONSIBLE PERSON</label>
-          <input type="text" id="act-person" placeholder="Name">
+          <select id="act-person-sel" onchange="handleActPersonSel()">
+            <option value="">— Select person —</option>
+            <option value="__custom__">✏️ Custom…</option>
+          </select>
+          <input type="text" id="act-person" placeholder="Enter name…" style="display:none;margin-top:6px">
         </div>
         <div class="full">
           <label>NOTES</label>
@@ -356,6 +440,12 @@ async function boot() {
 
   loadAlerts();
   loadActivities();
+
+  // Restore saved role or default to manager
+  const savedRole = (() => { try { return sessionStorage.getItem('adminRole'); } catch (_) { return null; } })();
+  const initRole  = (savedRole === 'field' || savedRole === 'manager') ? savedRole : 'manager';
+  $('adminRole').value = initRole;
+  applyRole(initRole);
 }
 
 // ── Program metrics ───────────────────────────────────────────
@@ -375,11 +465,8 @@ function loadProgram() {
   $('f-budget-val').textContent = b + '%';
 
   // Metrics
-  $('f-today').value      = prog.metrics?.today      ?? 0;
-  $('f-total').value      = prog.metrics?.total      ?? 0;
-  const c = prog.metrics?.completion ?? 0;
-  $('f-completion').value = c;
-  $('f-completion-val').textContent = c + '%';
+  $('f-today').value = prog.metrics?.today ?? 0;
+  $('f-total').value = prog.metrics?.total ?? 0;
 
   // KPIs
   const kpis = prog.kpis ?? {};
@@ -389,15 +476,70 @@ function loadProgram() {
     ? '<div style="color:var(--muted);font-size:13px">No KPIs recorded for this program.</div>'
     : kpiKeys[id].map(k => `
         <div class="kpi-item">
-          <label>${k.replace(/_/g,' ').toUpperCase()}</label>
-          <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}">
+          <label>${k.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</label>
+          <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}" oninput="autoComputeCompletion()">
         </div>`
       ).join('');
+
+  // Trigger initial auto-compute
+  autoComputeCompletion();
 
   // Status badge
   const colors = { 'on-track': '#6ee7b7', caution: '#fcd34d', behind: '#fca5a5' };
   $('prog-status-badge').innerHTML =
     `<span style="color:${colors[prog.status]};font-weight:700">${prog.status.toUpperCase()}</span>`;
+}
+
+// ── Auto-compute completion from KPI form values ──────────────
+function autoComputeCompletion() {
+  const id = $('prog-select').value;
+  if (!id) return 0;
+
+  const g    = key => parseFloat($(`kpi-${key}`)?.value) || 0;
+  const safe = (a, b) => (b > 0) ? Math.min(a / b, 1) : null;
+  let ratios = [];
+
+  if (id === 'GIP' || id === 'TES') {
+    const r1 = safe(g('enrolled'), g('target_enrolled'));      if (r1 !== null) ratios.push(r1);
+    const r2 = safe(g('cohorts_ytd'), g('cohorts_target'));    if (r2 !== null) ratios.push(r2);
+    const gr = g('graduation_rate');  if (gr > 0) ratios.push(gr / 100);
+    const vp = g('vbp_progression');  if (vp > 0) ratios.push(vp / 100);
+  } else if (id === 'VBP') {
+    const r1 = safe(g('enrolled'), g('target_enrolled'));      if (r1 !== null) ratios.push(r1);
+    const gr = g('graduation_rate');  if (gr > 0) ratios.push(gr / 100);
+  } else if (id === 'PCTP') {
+    const r1 = safe(g('products_tested'), g('target_products')); if (r1 !== null) ratios.push(r1);
+    const r2 = safe(g('testers_engaged'), g('target_testers'));  if (r2 !== null) ratios.push(r2);
+    const r3 = safe(g('cycles_ytd'), g('cycles_target'));        if (r3 !== null) ratios.push(r3);
+    const fc = g('feedback_completion'); if (fc > 0) ratios.push(fc / 100);
+  } else if (id === 'SAP') {
+    const r1 = safe(g('startups_supported'), g('target_supported')); if (r1 !== null) ratios.push(r1);
+    const r2 = safe(g('clinic_sessions'), g('target_sessions'));     if (r2 !== null) ratios.push(r2);
+    const r3 = safe(g('advisors'), g('target_advisors'));            if (r3 !== null) ratios.push(r3);
+    const ra = g('routing_accuracy'); if (ra > 0) ratios.push(ra / 100);
+  } else if (id === 'IRP') {
+    const r1 = safe(g('enrolled'), g('target_enrolled'));      if (r1 !== null) ratios.push(r1);
+    const r2 = safe(g('cohorts_ytd'), g('cohorts_target'));    if (r2 !== null) ratios.push(r2);
+    const gr = g('graduation_rate');  if (gr > 0) ratios.push(gr / 100);
+  } else if (id === 'GMP') {
+    const r1 = safe(g('portfolio_active'), g('target_portfolio')); if (r1 !== null) ratios.push(r1);
+    const rc = g('reporting_compliance'); if (rc > 0) ratios.push(Math.min(rc / 100, 1));
+  } else if (id === 'IDIA') {
+    const r1 = safe(g('partners'), g('target_partners'));            if (r1 !== null) ratios.push(r1);
+    const r2 = safe(g('startups_admitted'), g('target_admitted'));   if (r2 !== null) ratios.push(r2);
+    const r3 = safe(g('pilots'), g('target_pilots'));                if (r3 !== null) ratios.push(r3);
+    const r4 = safe(g('cohorts_ytd'), g('cohorts_target'));          if (r4 !== null) ratios.push(r4);
+  }
+
+  const computed = ratios.length
+    ? Math.round(ratios.reduce((s, r) => s + r, 0) / ratios.length * 100)
+    : 0;
+
+  const val = $('f-completion-val');
+  const bar = $('f-completion-bar');
+  if (val) val.textContent = computed + '%';
+  if (bar) bar.style.width = computed + '%';
+  return computed;
 }
 
 async function saveProgram() {
@@ -415,7 +557,7 @@ async function saveProgram() {
     budget_used:    parseInt($('f-budget').value),
     today_count:    parseInt($('f-today').value),
     total_count:    parseInt($('f-total').value),
-    completion_pct: parseInt($('f-completion').value),
+    completion_pct: autoComputeCompletion(),
     kpis,
   };
 
@@ -435,6 +577,8 @@ async function saveProgram() {
         prog.metrics.today  = payload.today_count;
         prog.metrics.total  = payload.total_count;
         prog.metrics.completion = payload.completion_pct;
+        // Sync displayed value
+        autoComputeCompletion();
         prog.kpis           = kpis;
       }
     } else {
@@ -557,8 +701,50 @@ async function loadActivities() {
     const res  = await fetch(url);
     const acts = await res.json();
     renderActivities(acts);
+    populateActivityDropdowns(acts);
   } catch (_) {
     $('act-table').innerHTML = '<div class="empty">Failed to load activities.</div>';
+  }
+}
+
+function populateActivityDropdowns(acts) {
+  const names   = [...new Set(acts.map(a => a.name).filter(Boolean))].sort();
+  const persons = [...new Set(acts.map(a => a.person).filter(p => p && p !== 'Unassigned'))].sort();
+
+  function repopulate(selId, values, placeholder) {
+    const sel = $(selId);
+    const cur = sel.value;
+    sel.innerHTML =
+      `<option value="">${placeholder}</option>` +
+      values.map(v => `<option value="${esc(v)}"${cur === v ? ' selected' : ''}>${esc(v)}</option>`).join('') +
+      '<option value="__custom__">✏️ Custom…</option>';
+  }
+
+  repopulate('act-name-sel',   names,   '— Select existing name —');
+  repopulate('act-person-sel', persons, '— Select person —');
+}
+
+function handleActNameSel() {
+  const sel = $('act-name-sel');
+  const inp = $('act-name');
+  if (sel.value === '__custom__') {
+    inp.style.display = 'block';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+  }
+}
+
+function handleActPersonSel() {
+  const sel = $('act-person-sel');
+  const inp = $('act-person');
+  if (sel.value === '__custom__') {
+    inp.style.display = 'block';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
   }
 }
 
@@ -587,8 +773,12 @@ function renderActivities(acts) {
 }
 
 async function logActivity() {
-  const name = $('act-name').value.trim();
+  const nameSel = $('act-name-sel').value;
+  const name = (nameSel && nameSel !== '__custom__') ? nameSel : $('act-name').value.trim();
   if (!name) { toast('Activity name is required', 'warn'); return; }
+
+  const personSel = $('act-person-sel').value;
+  const person = (personSel && personSel !== '__custom__') ? personSel : $('act-person').value.trim();
 
   const payload = {
     program_id: $('act-prog').value,
@@ -596,7 +786,7 @@ async function logActivity() {
     type:   $('act-type').value,
     date:   $('act-date').value,
     status: $('act-status').value,
-    person: $('act-person').value.trim() || 'Unassigned',
+    person: person || 'Unassigned',
     notes:  $('act-notes').value.trim(),
   };
 
@@ -608,8 +798,12 @@ async function logActivity() {
     const data = await res.json();
     if (data.success) {
       toast(`✅ Activity logged (ID ${data.id})`);
-      $('act-name').value   = '';
-      $('act-person').value = '';
+      $('act-name-sel').value   = '';
+      $('act-name').value        = '';
+      $('act-name').style.display = 'none';
+      $('act-person-sel').value  = '';
+      $('act-person').value      = '';
+      $('act-person').style.display = 'none';
       $('act-notes').value  = '';
       loadActivities();
       // Refresh local program metrics so today/total counts are fresh
@@ -627,6 +821,68 @@ async function logActivity() {
   }
 }
 
+// ── Role-based view ──────────────────────────────────────────
+function applyRole(role) {
+  // Show/hide manager-only tabs (Program Metrics, Alerts)
+  document.querySelectorAll('[data-role="manager"]').forEach(el =>
+    el.classList.toggle('role-hidden', role !== 'manager')
+  );
+  // Show/hide field-only tabs (Program Overview)
+  document.querySelectorAll('[data-role="field"]').forEach(el =>
+    el.classList.toggle('role-hidden', role !== 'field')
+  );
+  // If the currently active tab just got hidden, switch to a visible default
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab?.classList.contains('role-hidden')) {
+    switchTab(role === 'field' ? 'summary' : 'programs');
+  }
+  // Update header subtitle
+  $('role-desc').textContent = role === 'field'
+    ? 'View program status and log your field activities'
+    : 'Update program metrics, alerts, and activities';
+  // Populate summary panel when switching to Field Staff view
+  if (role === 'field' && programs.length) renderSummary();
+  // Persist choice for this browser session
+  try { sessionStorage.setItem('adminRole', role); } catch (_) {}
+}
+
+function renderSummary() {
+  const el = $('summary-grid');
+  if (!el) return;
+  if (!programs.length) {
+    el.innerHTML = '<div class="empty">No programs loaded.</div>';
+    return;
+  }
+  const statusIcons  = { 'on-track': '&#x2705;', caution: '&#x26A0;&#xFE0F;', behind: '&#x1F6A8;' };
+  const statusLabels = { 'on-track': 'On Track', caution: 'Caution', behind: 'Behind' };
+  el.innerHTML = programs.map(p => {
+    const c   = p.metrics?.completion ?? 0;
+    const tot = p.metrics?.total      ?? 0;
+    const tod = p.metrics?.today      ?? 0;
+    const bar = p.status === 'behind'  ? '#ef4444'
+              : p.status === 'caution' ? '#f59e0b' : '#10b981';
+    return `
+      <div class="summary-prog-card">
+        <div class="summary-prog-head">
+          <span class="summary-prog-icon">${p.icon ?? '\u{1F4CC}'}</span>
+          <div>
+            <div class="summary-prog-name">${esc(p.abbr)}</div>
+            <div class="summary-prog-stage">${esc(p.stage ?? p.id ?? '')}</div>
+          </div>
+        </div>
+        <span class="summary-status ${p.status}">${statusIcons[p.status] ?? ''} ${statusLabels[p.status] ?? esc(p.status)}</span>
+        <div class="summary-metrics-row">
+          <div><strong>${tod}</strong>Today</div>
+          <div><strong>${tot.toLocaleString()}</strong>Total</div>
+          <div><strong>${c}%</strong>Done</div>
+        </div>
+        <div class="summary-progress">
+          <div class="summary-progress-fill" style="width:${c}%;background:${bar}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
 // ── Utils ─────────────────────────────────────────────────────
 function esc(s) {
   return String(s ?? '')
@@ -634,7 +890,67 @@ function esc(s) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-boot();
+// ── Auth helpers ─────────────────────────────────────────────
+async function initApp() {
+  try {
+    const res  = await fetch(`${API}/auth.php`, { credentials: 'same-origin' });
+    const data = await res.json();
+    if (data.authenticated) {
+      showApp(data.user);
+    } else {
+      $('login-overlay').classList.remove('hidden');
+      $('li-user').focus();
+    }
+  } catch (_) {
+    $('login-overlay').classList.remove('hidden');
+  }
+}
+
+async function doLogin() {
+  const btn  = $('li-btn');
+  const user = $('li-user').value.trim();
+  const pass = $('li-pass').value;
+  $('login-error').textContent = '';
+  if (!user || !pass) { $('login-error').textContent = 'Please enter username and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res  = await fetch(`${API}/auth.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ username: user, password: pass }),
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      $('li-pass').value = '';
+      showApp(data.user);
+    } else {
+      $('login-error').textContent = 'Invalid username or password.';
+    }
+  } catch (_) {
+    $('login-error').textContent = 'Cannot reach server. Is XAMPP running?';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+async function doLogout() {
+  await fetch(`${API}/auth.php`, { method: 'DELETE', credentials: 'same-origin' });
+  $('logout-btn').style.display = 'none';
+  $('login-overlay').classList.remove('hidden');
+  $('li-user').value = ''; $('li-pass').value = '';
+  $('login-error').textContent = '';
+  $('li-user').focus();
+}
+
+function showApp(user) {
+  $('login-overlay').classList.add('hidden');
+  $('logout-btn').style.display = '';
+  $('role-desc').textContent = `Signed in as ${user} — update program metrics, alerts, and activities`;
+  boot();
+}
+
+initApp();
 </script>
 </body>
 </html>

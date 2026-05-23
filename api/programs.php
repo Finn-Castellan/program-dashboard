@@ -8,6 +8,7 @@ setCorsHeaders();
 
 // ── PATCH ────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
+    requireAuth();
     $body = json_decode(file_get_contents('php://input'), true);
     if (!is_array($body)) jsonError('Invalid JSON body');
 
@@ -63,6 +64,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
         );
         $stmt->execute($params);
         if ($stmt->rowCount() === 0) jsonError('Program not found', 404);
+
+        // ── Write audit snapshot ─────────────────────────────
+        $snap = $pdo->prepare(
+            'SELECT status, budget_used, today_count, total_count, completion_pct, kpis_json
+               FROM programs WHERE id = ?'
+        );
+        $snap->execute([$id]);
+        $cur = $snap->fetch();
+
+        $changedFields = implode(',', array_map(
+            fn($f) => trim(explode(' ', $f)[0]),   // strip "= ?" to get just the column name
+            array_filter($fields, fn($f) => $f !== 'updated_at = CURRENT_TIMESTAMP')
+        ));
+
+        $ins = $pdo->prepare(
+            'INSERT INTO program_snapshots
+               (program_id, changed_by, status, budget_used, today_count,
+                total_count, completion_pct, kpis_json, changed_fields)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        );
+        $ins->execute([
+            $id,
+            $_SESSION['admin_user'] ?? 'admin',
+            $cur['status'],
+            (int) $cur['budget_used'],
+            (int) $cur['today_count'],
+            (int) $cur['total_count'],
+            (int) $cur['completion_pct'],
+            $cur['kpis_json'],
+            $changedFields,
+        ]);
+
         jsonOk(['success' => true]);
     } catch (PDOException $e) {
         jsonError('Database error', 500);
@@ -73,18 +106,56 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     jsonError('Method not allowed', 405);
 }
 
+// Activity type enum order — must match the activities table ENUM definition
+// and the bar/doughnut chart label order in the front-end.
+const TYPE_ORDER = [
+    'Workshops', 'Coaching', 'Gate Reviews', 'Testing',
+    'Advisory',  'Demo Days', 'Investor Eng.', 'Pilots'
+];
+
 try {
-    $pdo  = getPDO();
+    $pdo = getPDO();
+
+    // ── 1. Fetch all programs ────────────────────────────────
     $stmt = $pdo->query(
         "SELECT * FROM programs
          ORDER BY FIELD(id,'GIP','TES','VBP','PCTP','SAP','IRP','GMP','IDIA')"
     );
     $rows = $stmt->fetchAll();
 
+    // ── 2. Live activity-type counts (one query, all programs) ─
+    $cntStmt = $pdo->query(
+        "SELECT program_id, type, COUNT(*) AS cnt
+         FROM activities
+         GROUP BY program_id, type"
+    );
+    // $liveCounts[program_id][type] = count
+    $liveCounts = [];
+    foreach ($cntStmt->fetchAll() as $r) {
+        $liveCounts[$r['program_id']][$r['type']] = (int) $r['cnt'];
+    }
+
+    // ── 3. Build response ────────────────────────────────────
     $programs = [];
     foreach ($rows as $row) {
+        $pid = $row['id'];
+
+        if (!empty($liveCounts[$pid])) {
+            // Build 8-element array from real activity records
+            $byType = [];
+            foreach (TYPE_ORDER as $t) {
+                $byType[] = $liveCounts[$pid][$t] ?? 0;
+            }
+            // Doughnut chart uses first 5 types
+            $dist = array_slice($byType, 0, 5);
+        } else {
+            // No real activities logged yet — fall back to stored seed JSON
+            $byType = json_decode($row['type_counts_json'] ?? '[]') ?: [];
+            $dist   = json_decode($row['distribution_json']  ?? '[]') ?: [];
+        }
+
         $programs[] = [
-            'id'          => $row['id'],
+            'id'          => $pid,
             'name'        => $row['name'],
             'abbr'        => $row['abbr'],
             'stage'       => $row['stage'],
@@ -98,10 +169,10 @@ try {
                 'total'      => (int) $row['total_count'],
                 'completion' => (int) $row['completion_pct'],
             ],
-            'trend'               => json_decode($row['trend_json']       ?? '[]'),
-            'activities_by_type'  => json_decode($row['type_counts_json'] ?? '[]'),
-            'distribution'        => json_decode($row['distribution_json'] ?? '[]'),
-            'kpis'                => json_decode($row['kpis_json']         ?? '{}', true) ?? (object)[],
+            'trend'              => json_decode($row['trend_json'] ?? '[]'),
+            'activities_by_type' => $byType,
+            'distribution'       => $dist,
+            'kpis'               => json_decode($row['kpis_json'] ?? '{}', true) ?? (object)[],
         ];
     }
 

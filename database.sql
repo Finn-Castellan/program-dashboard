@@ -76,6 +76,29 @@ CREATE TABLE IF NOT EXISTS alerts (
     REFERENCES programs (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ───────────────────────────────────────────────────────────────
+--  TABLE: program_snapshots  (audit trail)
+--  One row written each time a manager saves changes to a program.
+-- ───────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS program_snapshots (
+  id             INT UNSIGNED AUTO_INCREMENT,
+  program_id     VARCHAR(10)  NOT NULL,
+  changed_by     VARCHAR(100) NOT NULL DEFAULT 'admin',
+  status         ENUM('on-track','caution','behind') NOT NULL,
+  budget_used    TINYINT  UNSIGNED NOT NULL,
+  today_count    SMALLINT UNSIGNED NOT NULL,
+  total_count    INT      UNSIGNED NOT NULL,
+  completion_pct TINYINT  UNSIGNED NOT NULL,
+  kpis_json      JSON,
+  changed_fields VARCHAR(500) NOT NULL DEFAULT '',
+  snapshot_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  INDEX idx_snap_prog (program_id),
+  INDEX idx_snap_at   (snapshot_at),
+  CONSTRAINT fk_snap_program FOREIGN KEY (program_id)
+    REFERENCES programs (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ═══════════════════════════════════════════════════════════════
 --  SEED DATA — Programs (8 MIIC programs from Masterplan V3)
 -- ═══════════════════════════════════════════════════════════════
@@ -171,7 +194,12 @@ VALUES
   '[6,10,3,3,2,3,2,8]',
   '[25,20,22,18,15]',
   '{"partners":3,"target_partners":5,"startups_admitted":14,"target_admitted":20,"pilots":4,"target_pilots":5,"contracts_lois":2,"revenue_usd":28000,"miic_pipeline_pct":52,"cohorts_ytd":1,"cohorts_target":2,"satisfaction":3.8}'
-);
+)
+ON DUPLICATE KEY UPDATE
+  kpis_json         = VALUES(kpis_json),
+  trend_json        = VALUES(trend_json),
+  type_counts_json  = VALUES(type_counts_json),
+  distribution_json = VALUES(distribution_json);
 
 -- ═══════════════════════════════════════════════════════════════
 --  SEED DATA — Alerts
