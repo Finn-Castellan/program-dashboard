@@ -91,6 +91,9 @@
   /* ── KPI Grid ── */
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
   .kpi-item label { font-size: 11px; }
+  .kpi-del-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 11px; padding: 0 3px; line-height: 1; transition: color .15s; }
+  .kpi-del-btn:hover { color: var(--danger); }
+  .add-kpi-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
 
   /* ── Empty state ── */
   .empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
@@ -255,6 +258,17 @@
       <div class="card">
         <h2>🎯 KPIs</h2>
         <div id="kpi-grid" class="kpi-grid"></div>
+        <div class="add-kpi-row">
+          <div>
+            <label>NEW KPI NAME</label>
+            <input type="text" id="new-kpi-key" placeholder="e.g. revenue_usd" style="max-width:180px">
+          </div>
+          <div>
+            <label>VALUE</label>
+            <input type="text" id="new-kpi-value" placeholder="0" style="max-width:120px">
+          </div>
+          <button class="btn btn-success btn-sm" onclick="addKpi()">➕ Add KPI</button>
+        </div>
       </div>
 
       <div style="display:flex;gap:10px;margin-top:4px">
@@ -475,8 +489,11 @@ function loadProgram() {
   grid.innerHTML = kpiKeys[id].length === 0
     ? '<div style="color:var(--muted);font-size:13px">No KPIs recorded for this program.</div>'
     : kpiKeys[id].map(k => `
-        <div class="kpi-item">
-          <label>${k.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</label>
+        <div class="kpi-item" id="kpi-item-${k}">
+          <label style="display:flex;align-items:center;justify-content:space-between">
+            <span>${k.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</span>
+            <button type="button" class="kpi-del-btn" onclick="removeKpi('${k}')" title="Remove this KPI">✕</button>
+          </label>
           <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}" oninput="autoComputeCompletion()">
         </div>`
       ).join('');
@@ -594,6 +611,56 @@ async function resetToday() {
   if (!id) { toast('Select a program first', 'warn'); return; }
   $('f-today').value = 0;
   await saveProgram();
+}
+
+function addKpi() {
+  const id = $('prog-select').value;
+  if (!id) { toast('Select a program first', 'warn'); return; }
+
+  const rawKey = $('new-kpi-key').value.trim();
+  if (!rawKey) { toast('Enter a KPI name', 'warn'); return; }
+
+  // Sanitize: lowercase, spaces/hyphens → underscores, strip invalid chars
+  const key = rawKey.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+  if (!key) { toast('Invalid KPI name — use letters, numbers, and underscores', 'warn'); return; }
+  if ((kpiKeys[id] ?? []).includes(key)) { toast(`KPI "${key}" already exists`, 'warn'); return; }
+
+  const value = $('new-kpi-value').value.trim();
+
+  if (!kpiKeys[id]) kpiKeys[id] = [];
+  kpiKeys[id].push(key);
+
+  const grid = $('kpi-grid');
+  // Remove empty-state message if present
+  if (!grid.querySelector('.kpi-item')) grid.innerHTML = '';
+
+  const item = document.createElement('div');
+  item.className = 'kpi-item';
+  item.id = `kpi-item-${key}`;
+  item.innerHTML = `
+    <label style="display:flex;align-items:center;justify-content:space-between">
+      <span>${key.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</span>
+      <button type="button" class="kpi-del-btn" onclick="removeKpi('${key}')" title="Remove this KPI">✕</button>
+    </label>
+    <input type="text" id="kpi-${key}" value="${esc(value)}" oninput="autoComputeCompletion()">`;
+  grid.appendChild(item);
+
+  $('new-kpi-key').value   = '';
+  $('new-kpi-value').value = '';
+  toast(`KPI "${key}" added — click Save Changes to persist`);
+}
+
+function removeKpi(key) {
+  const id = $('prog-select').value;
+  if (!id) return;
+  if (!confirm(`Remove KPI "${key}"? This will be permanent after saving.`)) return;
+  kpiKeys[id] = (kpiKeys[id] ?? []).filter(k => k !== key);
+  const item = $(`kpi-item-${key}`);
+  if (item) item.remove();
+  if (!kpiKeys[id].length) {
+    $('kpi-grid').innerHTML = '<div style="color:var(--muted);font-size:13px">No KPIs recorded for this program.</div>';
+  }
+  autoComputeCompletion();
 }
 
 // ── Alerts ───────────────────────────────────────────────────
