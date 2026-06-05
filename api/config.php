@@ -4,9 +4,9 @@
 //  MySQL credentials (default XAMPP: root / empty password)
 // ─────────────────────────────────────────────────────────────
 define('DB_HOST',    'localhost');
-define('DB_NAME',    'miic_dashboard');
-define('DB_USER',    'root');
-define('DB_PASS',    '');
+define('DB_NAME',    'u895763689_activity_db');
+define('DB_USER',    'u895763689_activity_db');
+define('DB_PASS',    '(Miic@2017#)');
 define('DB_CHARSET', 'utf8mb4');
 
 // ─────────────────────────────────────────────────────────────
