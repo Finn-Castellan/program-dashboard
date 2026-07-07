@@ -2987,6 +2987,28 @@ function getKPILines(p) {
     lines.push({label:'MIIC Pipeline Ventures (%)', value:`${k.miic_pipeline_pct}%`});
     lines.push({label:'Cohorts YTD / Target',      value:`${k.cohorts_ytd} / ${k.cohorts_target}${pct(k.cohorts_ytd, k.cohorts_target)}`, color: k.cohorts_ytd<k.cohorts_target?'#ef4444':'#22c55e'});
     lines.push({label:'Pilot-to-Contract Rate',    value:`${p.pilot_conversion}%`});
+  } else {
+    // Generic renderer for dynamically-created programs
+    const targetKeys = new Set(Object.keys(k).filter(key => key.endsWith('_target')));
+    Object.keys(k)
+      .filter(key => !key.endsWith('_target'))
+      .forEach(key => {
+        const label = key.replace(/_/g,' ').replace(/\bpct\b/gi,'%').replace(/\bytd\b/gi,'YTD').replace(/\busd\b/gi,'USD').toUpperCase();
+        const val   = k[key] ?? '—';
+        const tKey  = `${key}_target`;
+        if (targetKeys.has(tKey) && k[tKey] !== undefined && k[tKey] !== '') {
+          const tgt  = k[tKey];
+          const num  = parseFloat(val), tnum = parseFloat(tgt);
+          const pctStr = (!isNaN(num) && !isNaN(tnum) && tnum > 0)
+            ? ` (${Math.round(Math.min(num / tnum, 1) * 100)}%)` : '';
+          const color = (!isNaN(num) && !isNaN(tnum) && tnum > 0)
+            ? (num >= tnum ? '#22c55e' : num >= tnum * 0.8 ? '#f59e0b' : '#ef4444')
+            : undefined;
+          lines.push({ label, value: `${val} / ${tgt}${pctStr}`, color });
+        } else {
+          lines.push({ label, value: String(val) });
+        }
+      });
   }
   return lines;
 }

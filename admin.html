@@ -89,8 +89,9 @@
   .badge-info     { background: #1e3a5f33; color: #93c5fd; }
 
   /* ── KPI Grid ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
   .kpi-item label { font-size: 11px; }
+  .kpi-sub-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
   .kpi-del-btn { background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 11px; padding: 0 3px; line-height: 1; transition: color .15s; }
   .kpi-del-btn:hover { color: var(--danger); }
   .add-kpi-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
@@ -271,7 +272,11 @@
           </div>
           <div>
             <label>VALUE</label>
-            <input type="text" id="new-kpi-value" placeholder="0" style="max-width:120px">
+            <input type="text" id="new-kpi-value" placeholder="0" style="max-width:100px">
+          </div>
+          <div>
+            <label>TARGET</label>
+            <input type="text" id="new-kpi-target" placeholder="—" style="max-width:100px">
           </div>
           <button class="btn btn-success btn-sm" onclick="addKpi()">➕ Add KPI</button>
         </div>
@@ -529,9 +534,9 @@ function loadProgram() {
   $('f-today').value = prog.metrics?.today ?? 0;
   $('f-total').value = prog.metrics?.total ?? 0;
 
-  // KPIs
+  // KPIs — _target keys are paired with their base key, not shown as separate rows
   const kpis = prog.kpis ?? {};
-  kpiKeys[id] = Object.keys(kpis);
+  kpiKeys[id] = Object.keys(kpis).filter(k => !k.endsWith('_target'));
   const grid  = $('kpi-grid');
   grid.innerHTML = kpiKeys[id].length === 0
     ? '<div style="color:var(--muted);font-size:13px">No KPIs recorded for this program.</div>'
@@ -541,7 +546,16 @@ function loadProgram() {
             <span>${k.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</span>
             <button type="button" class="kpi-del-btn" onclick="removeKpi('${k}')" title="Remove this KPI">✕</button>
           </label>
-          <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}" oninput="autoComputeCompletion()">
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;min-width:0">
+              <div class="kpi-sub-label">Value</div>
+              <input type="text" id="kpi-${k}" value="${kpis[k] ?? ''}" oninput="autoComputeCompletion()" style="width:100%">
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="kpi-sub-label">Target</div>
+              <input type="text" id="kpi-${k}_target" value="${kpis[k + '_target'] ?? ''}" placeholder="—" style="width:100%">
+            </div>
+          </div>
         </div>`
       ).join('');
 
@@ -613,6 +627,10 @@ async function saveProgram() {
   const kpis = {};
   (kpiKeys[id] ?? []).forEach(k => {
     kpis[k] = $(`kpi-${k}`)?.value ?? '';
+    const targetEl = $(`kpi-${k}_target`);
+    if (targetEl && targetEl.value.trim() !== '') {
+      kpis[`${k}_target`] = targetEl.value.trim();
+    }
   });
 
   const payload = {
@@ -672,7 +690,8 @@ function addKpi() {
   if (!key) { toast('Invalid KPI name — use letters, numbers, and underscores', 'warn'); return; }
   if ((kpiKeys[id] ?? []).includes(key)) { toast(`KPI "${key}" already exists`, 'warn'); return; }
 
-  const value = $('new-kpi-value').value.trim();
+  const value  = $('new-kpi-value').value.trim();
+  const target = $('new-kpi-target').value.trim();
 
   if (!kpiKeys[id]) kpiKeys[id] = [];
   kpiKeys[id].push(key);
@@ -689,11 +708,21 @@ function addKpi() {
       <span>${key.replace(/_/g,' ').replace(/\bpct\b/gi,'Percentage').replace(/\bytd\b/gi,'Year to Date').toUpperCase()}</span>
       <button type="button" class="kpi-del-btn" onclick="removeKpi('${key}')" title="Remove this KPI">✕</button>
     </label>
-    <input type="text" id="kpi-${key}" value="${esc(value)}" oninput="autoComputeCompletion()">`;
+    <div style="display:flex;gap:6px">
+      <div style="flex:1;min-width:0">
+        <div class="kpi-sub-label">Value</div>
+        <input type="text" id="kpi-${key}" value="${esc(value)}" oninput="autoComputeCompletion()" style="width:100%">
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="kpi-sub-label">Target</div>
+        <input type="text" id="kpi-${key}_target" value="${esc(target)}" placeholder="—" style="width:100%">
+      </div>
+    </div>`;
   grid.appendChild(item);
 
-  $('new-kpi-key').value   = '';
-  $('new-kpi-value').value = '';
+  $('new-kpi-key').value    = '';
+  $('new-kpi-value').value  = '';
+  $('new-kpi-target').value = '';
   toast(`KPI "${key}" added — click Save Changes to persist`);
 }
 
