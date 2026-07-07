@@ -22,6 +22,8 @@ jobs:
           port:     21
           # Files live at public_html/programdashboard/ on Hostinger:
           server-dir: /public_html/programdashboard/
+          # Force full re-upload every time (ignores sync state cache)
+          dangerous-clean-slate: true
           # Exclude files that only belong on the local XAMPP copy
           exclude: |
             **/.git*
