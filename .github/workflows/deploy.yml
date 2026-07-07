@@ -24,6 +24,8 @@ jobs:
           set ftp:ssl-allow no
           set net:timeout 60
           set net:max-retries 3
-          mirror --reverse --no-perms --transfer-all --exclude-glob .git* --exclude README.md . /public_html/program-dashboard/
+          pwd
+          ls
+          mirror --reverse --no-perms --transfer-all --verbose --exclude-glob .git* --exclude README.md . /public_html/program-dashboard/
           quit
           ENDFTP
