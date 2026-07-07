@@ -20,7 +20,7 @@ jobs:
         env:
           FTP_PASS: ${{ secrets.FTP_PASSWORD }}
         run: |
-          lftp -u "u895763689,$FTP_PASS" ftp://45.84.206.23 << 'ENDFTP'
+          lftp -u "u895763689.programdashboard,$FTP_PASS" 45.84.206.23 << 'ENDFTP'
           set ftp:ssl-allow no
           set net:timeout 60
           set net:max-retries 3
