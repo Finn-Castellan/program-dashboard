@@ -20,8 +20,8 @@ jobs:
           username: u895763689
           password: ${{ secrets.FTP_PASSWORD }}
           port:     21
-          # Root of the hosted site:
-          server-dir: /public_html/
+          # Files live at public_html/programdashboard/ on Hostinger:
+          server-dir: /public_html/programdashboard/
           # Exclude files that only belong on the local XAMPP copy
           exclude: |
             **/.git*
