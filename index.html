@@ -1494,16 +1494,12 @@ function escHtml(s) {
 // are NULL or empty — e.g. after a fresh DB import without seed data — the API
 // returns empty arrays. Fill those gaps from FALLBACK_PROGRAMS so charts always render.
 function mergeChartFallbacks(apiPrograms) {
-  return apiPrograms.map(p => {
-    const fb = FALLBACK_PROGRAMS.find(f => f.id === p.id);
-    if (!fb) return p;
-    return {
-      ...p,
-      trend:              (Array.isArray(p.trend)              && p.trend.length)              ? p.trend              : fb.trend,
-      activities_by_type: (Array.isArray(p.activities_by_type) && p.activities_by_type.length) ? p.activities_by_type : fb.activities_by_type,
-      distribution:       (Array.isArray(p.distribution)       && p.distribution.length)       ? p.distribution       : fb.distribution,
-    };
-  });
+  return apiPrograms.map(p => ({
+    ...p,
+    trend:              (Array.isArray(p.trend)              && p.trend.length)              ? p.trend              : [],
+    activities_by_type: (Array.isArray(p.activities_by_type) && p.activities_by_type.length) ? p.activities_by_type : [],
+    distribution:       (Array.isArray(p.distribution)       && p.distribution.length)       ? p.distribution       : [],
+  }));
 }
 
 // Normalise alert objects from both DB format (program_id, description)
