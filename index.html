@@ -2712,7 +2712,7 @@ function renderAlerts() {
       </div>
       <div class="alert-actions">
         <button class="alert-btn" onclick="acknowledgeAlert(${JSON.stringify(a.id)},${i})">✓ Acknowledge</button>
-        <button class="alert-btn">↗ Assign</button>
+        <button class="alert-btn" onclick="assignAlert(${JSON.stringify(a.id)},${i})">↗ Assign</button>
       </div>
     </div>`).join('')
   : `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">✅ No active alerts</div>`;
@@ -2732,6 +2732,57 @@ function acknowledgeAlert(alertId, idx) {
   renderAlerts();
   updateBell();
 }
+
+function assignAlert(alertId, idx) {
+  const alert = ALERTS[idx];
+  if (!alert) return;
+
+  const people = ['Sarah K.', 'James M.', 'Anna T.', 'David O.', 'Grace N.', 'Peter L.', 'Faith W.', 'Moses B.'];
+  const currentAssignee = alert.assignee || '';
+
+  const options = people.map(p =>
+    `<option value="${p}" ${p === currentAssignee ? 'selected' : ''}>${p}</option>`
+  ).join('');
+
+  $('modalTitle').textContent = '↗ Assign Alert';
+  $('modalBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="font-size:13px;color:var(--text-muted)">${escHtml(alert.title)}</div>
+      <div class="filter-group">
+        <div class="filter-label">Assign to</div>
+        <select class="filter-select" id="assignSelect">
+          <option value="">— Select staff member —</option>
+          ${options}
+        </select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="confirmAssign(${JSON.stringify(alertId)}, ${idx})">✓ Confirm</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>`;
+  $('modalOverlay').classList.add('open');
+}
+
+function confirmAssign(alertId, idx) {
+  const person = $('assignSelect')?.value;
+  if (!person) { $('assignSelect')?.focus(); return; }
+
+  ALERTS[idx].assignee = person;
+
+  // Persist to DB if real id exists
+  if (alertId !== null && alertId !== undefined) {
+    fetch(`${API_BASE}/alerts.php`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'assign', id: alertId, assignee: person }),
+    }).catch(() => {});
+  }
+
+  closeModal();
+  renderAlerts();
+  showToast(`✅ Alert assigned to ${person}`);
+}
+
 function acknowledgeAll() {
   // Persist to DB (fire-and-forget)
   fetch(`${API_BASE}/alerts.php`, {

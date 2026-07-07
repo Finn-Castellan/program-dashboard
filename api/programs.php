@@ -102,6 +102,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'PATCH') {
     }
 }
 
+// ── POST — create a new program ──────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAuth();
+    $body = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($body)) jsonError('Invalid JSON body');
+
+    $id = strtoupper(trim($body['id'] ?? ''));
+    if (!preg_match('/^[A-Z]{2,10}$/', $id)) jsonError('Program ID must be 2–10 uppercase letters');
+
+    $name = trim($body['name'] ?? '');
+    if ($name === '') jsonError('Program name is required');
+
+    $abbr  = trim($body['abbr']  ?? '') ?: $id;
+    $stage = trim($body['stage'] ?? '');
+    $icon  = trim($body['icon']  ?? '📋');
+    $color = trim($body['color'] ?? '#3b82f6');
+    $desc  = trim($body['description'] ?? '');
+
+    if (!preg_match('/^#[0-9a-fA-F]{3,6}$/', $color)) $color = '#3b82f6';
+
+    try {
+        $pdo  = getPDO();
+        $stmt = $pdo->prepare(
+            'INSERT INTO programs (id, name, abbr, stage, icon, color, description)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([$id, $name, $abbr, $stage, $icon, $color, $desc]);
+        jsonOk(['success' => true, 'id' => $id]);
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') jsonError('A program with that ID already exists', 409);
+        jsonError('Database error', 500);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     jsonError('Method not allowed', 405);
 }
@@ -117,10 +151,7 @@ try {
     $pdo = getPDO();
 
     // ── 1. Fetch all programs ────────────────────────────────
-    $stmt = $pdo->query(
-        "SELECT * FROM programs
-         ORDER BY FIELD(id,'GIP','TES','VBP','PCTP','SAP','IRP','GMP','IDIA')"
-    );
+    $stmt = $pdo->query('SELECT * FROM programs ORDER BY created_at ASC, id ASC');
     $rows = $stmt->fetchAll();
 
     // ── 2. Live activity-type counts (one query, all programs) ─

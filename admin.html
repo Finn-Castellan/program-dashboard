@@ -133,6 +133,11 @@
 
   @media(max-width:600px) { .grid, .grid.three { grid-template-columns: 1fr; } }
 
+  /* ── New Program Modal ── */
+  #new-prog-overlay { position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.65);align-items:center;justify-content:center; }
+  .new-prog-box { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:500px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.5); }
+  .new-prog-box h2 { font-size:15px;font-weight:700;margin-bottom:20px; }
+
   /* ── Login overlay ── */
   #login-overlay {
     position: fixed; inset: 0; z-index: 9999;
@@ -213,6 +218,7 @@
           <option value="">Loading programs…</option>
         </select>
         <span id="prog-status-badge" style="font-size:12px"></span>
+        <button class="btn btn-success btn-sm" data-role="manager" onclick="openNewProgramModal()">➕ New Program</button>
       </div>
     </div>
 
@@ -400,6 +406,47 @@
 
   </div>
 </main>
+
+<div id="new-prog-overlay" style="display:none" onclick="if(event.target===this)closeNewProgramModal()">
+  <div class="new-prog-box">
+    <h2>➕ Create New Program</h2>
+    <div class="grid">
+      <div>
+        <label>PROGRAM ID <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(2–10 uppercase letters)</span></label>
+        <input type="text" id="np-id" placeholder="e.g. ABC" maxlength="10"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');if(!$('np-abbr').value)$('np-abbr').value=this.value">
+      </div>
+      <div>
+        <label>ABBREVIATION</label>
+        <input type="text" id="np-abbr" placeholder="e.g. ABC" maxlength="10">
+      </div>
+      <div class="full">
+        <label>FULL NAME</label>
+        <input type="text" id="np-name" placeholder="e.g. Advanced Business Cohort">
+      </div>
+      <div class="full">
+        <label>STAGE / PHASE</label>
+        <input type="text" id="np-stage" placeholder="e.g. Phase 1 — Pre-incubation">
+      </div>
+      <div>
+        <label>ICON (emoji)</label>
+        <input type="text" id="np-icon" value="📋" maxlength="4" style="max-width:80px">
+      </div>
+      <div>
+        <label>COLOUR</label>
+        <input type="color" id="np-color" value="#3b82f6" style="height:38px;padding:2px 6px;cursor:pointer">
+      </div>
+      <div class="full">
+        <label>DESCRIPTION</label>
+        <textarea id="np-desc" placeholder="Brief program description…" style="min-height:64px"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn" style="background:var(--border);color:var(--text)" onclick="closeNewProgramModal()">Cancel</button>
+      <button class="btn btn-success" onclick="createProgram()">Create Program</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -1015,6 +1062,64 @@ function showApp(user) {
   $('logout-btn').style.display = '';
   $('role-desc').textContent = `Signed in as ${user} — update program metrics, alerts, and activities`;
   boot();
+}
+
+// ── New Program ───────────────────────────────────────────────
+function openNewProgramModal() {
+  ['np-id','np-name','np-abbr','np-stage','np-desc'].forEach(id => $(id).value = '');
+  $('np-icon').value  = '📋';
+  $('np-color').value = '#3b82f6';
+  $('new-prog-overlay').style.display = 'flex';
+  $('np-id').focus();
+}
+
+function closeNewProgramModal() {
+  $('new-prog-overlay').style.display = 'none';
+}
+
+function rebuildProgramSelects() {
+  const opts     = programs.map(p => `<option value="${p.id}">${p.icon} ${p.abbr} — ${p.name}</option>`).join('');
+  const optsFull = programs.map(p => `<option value="${p.id}">${p.abbr}</option>`).join('');
+  $('prog-select').innerHTML     = '<option value="">— Choose a program —</option>' + opts;
+  $('a-prog').innerHTML          = '<option value="">— None —</option>' + optsFull;
+  $('act-prog').innerHTML        = optsFull;
+  $('act-filter-prog').innerHTML = '<option value="">All Programs</option>' + optsFull;
+}
+
+async function createProgram() {
+  const id = $('np-id').value.trim();
+  if (!/^[A-Z]{2,10}$/.test(id)) { toast('ID must be 2–10 uppercase letters', 'warn'); return; }
+  const name = $('np-name').value.trim();
+  if (!name) { toast('Full name is required', 'warn'); return; }
+
+  const payload = {
+    id,
+    name,
+    abbr:        $('np-abbr').value.trim() || id,
+    stage:       $('np-stage').value.trim(),
+    icon:        $('np-icon').value.trim()  || '📋',
+    color:       $('np-color').value,
+    description: $('np-desc').value.trim(),
+  };
+
+  try {
+    const res  = await fetch(`${API}/programs.php`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast(`✅ Program ${id} created`);
+      closeNewProgramModal();
+      const pr = await fetch(`${API}/programs.php`);
+      programs = await pr.json();
+      rebuildProgramSelects();
+      $('prog-select').value = id;
+      loadProgram();
+    } else {
+      toast(data.error ?? 'Create failed', 'err');
+    }
+  } catch (_) { toast('Network error', 'err'); }
 }
 
 initApp();

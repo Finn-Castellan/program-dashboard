@@ -1,0 +1,10 @@
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+
+# XAMPP local-only overrides
+# If you ever create a local config, put it here:
+# api/config.local.php
