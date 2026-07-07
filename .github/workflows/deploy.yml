@@ -16,10 +16,11 @@ jobs:
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server:   ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
+          server:   45.84.206.23
+          username: u895763689
           password: ${{ secrets.FTP_PASSWORD }}
-          # Hostinger's public_html path — adjust if you deployed into a subfolder:
+          port:     21
+          # Files live at public_html/programdashboard/ on Hostinger:
           server-dir: /public_html/programdashboard/
           # Exclude files that only belong on the local XAMPP copy
           exclude: |
